@@ -24,4 +24,5 @@ def train(net, batch, ts_per, lrn_rate, mntum, folds, epochs, outc):
     print("Total Training Time: {:.2f} seconds".format(elapsed_time))
     return ts_load
 
-train(smplNet(), 10, 0.1, 0.01, 0.1, 10, 10, "BackPain")
+#train(smplNetCnt(), 10, 0.1, 0.001, 0.01, 5, 2, "BackPain")
+train(smplNetLog(), 10, 0.1, 0.001, 0.01, 5, 2, "Recovery")

@@ -16,26 +16,26 @@ outcome_to_index = {
 
 
 
-def BackPain_Convert(outcomes):
+def Log_Convert(outcomes):
     print("  Outcomes.size = ", outcomes.size())
     print("  Outcomes = ", outcomes)
     out1 = int(outcomes[0,0].item())
-    tmp1 = torch.zeros(1,11)
+    tmp1 = torch.zeros(1,2)
     tmp1[0,out1] = 1
     ret = tmp1
     print("  RET = ", ret)
     for i in range(1,len(outcomes)):
-        print("        i = ", i)
+        #print("        i = ", i)
         out_val = int(outcomes[i,0].item())
-        print("  out_val = ", out_val)
-        tmp_enc = torch.zeros(1,11)
+        #print("  out_val = ", out_val)
+        tmp_enc = torch.zeros(1,2)
         tmp_enc[0,out_val] = 1
-        print("  tmp_enc = ", tmp_enc)
+        #print("  tmp_enc = ", tmp_enc)
         ret = torch.cat((ret,tmp_enc), 0)
-        print("      ret = ", ret)
+    print("      ret = ", ret)
         #outcomes[i,0] = tmp_enc
         #print(" outcomes = ",outcomes)
-    #return outcomes
+    return ret
 
 
 
@@ -88,16 +88,21 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
     criterion = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
 
-    #for epoch in range(epochs):
-    trn_acc = np.zeros(folds)
-    trn_loss = np.zeros(folds)
-    val_acc = np.zeros(folds)
-    val_loss = np.zeros(folds)
+    ep_trn_acc = np.zeros(epochs)
+    ep_trn_loss = np.zeros(epochs)
+    ep_val_acc = np.zeros(epochs)
+    ep_val_loss = np.zeros(epochs)
 
     for epoch in range(epochs):
+        trn_acc = np.zeros(folds)
+        trn_loss = np.zeros(folds)
+        val_acc = np.zeros(folds)
+        val_loss = np.zeros(folds)
+
+        #for epoch in range(epochs)
         splits = [1/folds] * folds
         tv_folds = torch.utils.data.random_split(tv_data, splits)
-        print("Epoch: ",epoch)
+        print("Epoch: ",epoch + 1)
         for fold in range(folds):
             val_data = tv_folds[fold]
             trn_list = tv_folds.copy()
@@ -115,10 +120,10 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
                 outcomes = data['outcomes']
                 outc_idx = outcome_to_index[outc]
                 outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-                #outcomes = BackPain_Convert(outcomes)
-                #print("    --- Start ---")
-                #print(" Outcomes.size = ", outcomes.size())
-                #print(" Outcomes = ", outcomes)
+                outcomes = Log_Convert(outcomes)
+                print("    --- Start ---")
+                print(" Outcomes.size = ", outcomes.size())
+                print(" Outcomes = ", outcomes)
                 #print(" Outcomes[BackPain] = ", outcomes[:,0])
                 #return
 
@@ -131,21 +136,26 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
 
                 optimizer.zero_grad()
                 outputs = net(inputs)
-                #print(" Output.size = ", outputs.size())
-                #print(" Output = ", outputs)
+                print(" Output.size = ", outputs.size())
+                print(" Output = ", outputs)
                 #print(" -- Gets Here -- ")
                 loss = criterion(outputs, outcomes)
                 loss.backward()
                 optimizer.step()
                 
-                #print("  loss.item() = ",loss.item())
+                print("  loss.item() = ",loss.item())
                 cur_cor = calc_cor(outputs, outcomes)
-                #print("      cur_cor = ", cur_cor)
-                #print("    --- End ---")
+                print("      cur_cor = ", cur_cor)
+                print("    --- End ---")
                 fold_trn_acc += cur_cor
                 fold_trn_loss += loss.item()
                 fold_data += len(outcomes)
             trn_acc[fold] = float(fold_trn_acc) / fold_data
             trn_loss[fold] = float(fold_trn_loss) / (i+1)
             val_acc[fold], val_loss[fold] = validate(net, val_load, criterion)
-            print(("Fold {}: Train Acc: {}, Train Loss: {} | "+"Val Acc: {}, Val Loss: {}").format(fold + 1, trn_acc[fold], trn_loss[fold], val_acc[fold], val_loss[fold]))
+            print(("    Fold {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(fold + 1, trn_acc[fold], trn_loss[fold], val_acc[fold], val_loss[fold]))
+        ep_trn_acc[epoch] = np.mean(trn_acc)
+        ep_trn_loss[epoch] = np.mean(trn_loss)
+        ep_val_acc[epoch] = np.mean(val_acc)
+        ep_val_loss[epoch] = np.mean(val_loss)
+        print(("  Epoch {}: Avg Train Acc: {:.5f}, Avg Train Loss: {:.5f} | "+"Avg Val Acc: {:.5f}, Avg Val Loss: {:.5f}").format(epoch + 1, ep_trn_acc[epoch], ep_trn_loss[epoch], ep_val_acc[epoch], ep_val_loss[epoch]))
