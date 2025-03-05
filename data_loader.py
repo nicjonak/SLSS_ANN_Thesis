@@ -22,7 +22,10 @@ class SLSSDataset(Dataset):
 #load_data function, inputs batch size and test split percentage, outputs randomly split train/val and test datasets
 def load_data(ts_per):
     xls_file = '../CSORN_Edit.xls'
+    #df = pd.read_excel(xls_file)
+    #print("df[0] = ", df.iloc[0])
     data_set = SLSSDataset(xls_file)
+    #print("Dataset[0] = ", data_set[0])
 
     splits = len(data_set)
     ts_split = int(splits * ts_per)

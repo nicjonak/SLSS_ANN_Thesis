@@ -24,5 +24,18 @@ def train(net, batch, ts_per, lrn_rate, mntum, folds, epochs, outc):
     print("Total Training Time: {:.2f} seconds".format(elapsed_time))
     return ts_load
 
-#train(smplNetCnt(), 10, 0.1, 0.001, 0.01, 5, 2, "BackPain")
-train(smplNetLog(), 10, 0.1, 0.001, 0.01, 5, 2, "Recovery")
+#train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 2, "BackPain")
+#train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 10, "EQ_IndexTL12")
+"""
+print("")
+print("         --- Break ---")
+print("")
+"""
+train(recovery_net(), 10, 0.1, 0.0005, 0.8, 10, 25, "Recovery")
+"""
+print("")
+print("         --- Break ---")
+print("")
+
+train(smplNetLog(), 10, 0.1, 0.01, 0.5, 10, 2, "ODI4_Final")
+"""

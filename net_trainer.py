@@ -16,29 +16,52 @@ outcome_to_index = {
 
 
 
-def Log_Convert(outcomes):
-    print("  Outcomes.size = ", outcomes.size())
-    print("  Outcomes = ", outcomes)
+def Log_Convert(outcomes, outc):
+    outc_idx = outcome_to_index[outc]
+    #print("  Outcomes.size = ", outcomes.size())
+    #print("  Outcomes = ", outcomes)
     out1 = int(outcomes[0,0].item())
+    if (outc_idx == 3):
+        if out1 == 1:
+            out1 = 0
+        elif out1 == 2:
+            out1 = 1
+        else:
+            print("ERROR: ODI4 value other than 1 or 2 shouldn't ")
     tmp1 = torch.zeros(1,2)
     tmp1[0,out1] = 1
     ret = tmp1
-    print("  RET = ", ret)
+    #print("  RET = ", ret)
     for i in range(1,len(outcomes)):
         #print("        i = ", i)
         out_val = int(outcomes[i,0].item())
+        if (outc_idx == 3):
+            if out_val == 1:
+                out_val = 0
+            elif out_val == 2:
+                out_val = 1
+            else:
+                print("ERROR: ODI4 value other than 1 or 2 shouldn't ")
         #print("  out_val = ", out_val)
         tmp_enc = torch.zeros(1,2)
         tmp_enc[0,out_val] = 1
         #print("  tmp_enc = ", tmp_enc)
         ret = torch.cat((ret,tmp_enc), 0)
-    print("      ret = ", ret)
+    #print("      ret = ", ret)
         #outcomes[i,0] = tmp_enc
         #print(" outcomes = ",outcomes)
     return ret
 
 
-
+def convert_outputs(outputs, outc):
+    outc_idx = outcome_to_index[outc]
+    ret = outputs.clone().detach()
+    for i in range(0,len(outputs)):
+        #print("Pre Round outputs[",i,"] = ",outputs[i])
+        #print("Rounded outputs[",i,"] = ",torch.round(outputs[i]))
+        ret[i] = torch.round(ret[i])
+    #print("Post Round ret = ", ret)
+    return ret
 
 
 
@@ -57,14 +80,17 @@ def calc_cor(outputs, outcomes):
         return 0.0
     return total_cor
 
-def validate(net, dataset, criterion):
+def validate(net, dataset, criterion, outc):
+    outc_idx = outcome_to_index[outc]
     total_loss = 0.0
     total_acc = 0.0
     total_data = 0
     for i, data in enumerate(dataset):
         inputs = data['predictors']
         outcomes = data['outcomes']
-        outcomes = outcomes[:,0].unsqueeze(1)
+        outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
+        if (outc_idx == 3) or (outc_idx == 5):
+            outcomes = Log_Convert(outcomes, outc)
 
         if torch.cuda.is_available() == True:
             inputs = inputs.cuda()
@@ -76,7 +102,12 @@ def validate(net, dataset, criterion):
         outputs = net(inputs)
         loss = criterion(outputs, outcomes)
 
-        cur_cor = calc_cor(outputs, outcomes)
+        if (outc_idx == 3) or (outc_idx == 5):
+            conv_outp = convert_outputs(outputs, outc)
+            #print("post conv outputs = ", outputs)
+            cur_cor = calc_cor(conv_outp, outcomes)
+        else:
+            cur_cor = calc_cor(outputs, outcomes)
         total_acc += cur_cor
         total_loss += loss.item()
         total_data += len(outcomes)
@@ -85,7 +116,14 @@ def validate(net, dataset, criterion):
     return acc, loss
 
 def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
-    criterion = nn.MSELoss()
+    outc_idx = outcome_to_index[outc]
+    print("outc = ", outc)
+    print("outc_idx = ", outc_idx)
+    if (outc_idx == 3) or (outc_idx == 5):
+        criterion = nn.CrossEntropyLoss()
+        #criterion = nn.BCELoss()
+    else:
+        criterion = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
 
     ep_trn_acc = np.zeros(epochs)
@@ -118,12 +156,13 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
             for i, data in enumerate(trn_load):
                 inputs = data['predictors']
                 outcomes = data['outcomes']
-                outc_idx = outcome_to_index[outc]
+                #outc_idx = outcome_to_index[outc]
                 outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-                outcomes = Log_Convert(outcomes)
-                print("    --- Start ---")
-                print(" Outcomes.size = ", outcomes.size())
-                print(" Outcomes = ", outcomes)
+                if (outc_idx == 3) or (outc_idx == 5):
+                    outcomes = Log_Convert(outcomes, outc)
+                #print("    --- Start ---")
+                #print(" Outcomes.size = ", outcomes.size())
+                #print(" Outcomes = ", outcomes)
                 #print(" Outcomes[BackPain] = ", outcomes[:,0])
                 #return
 
@@ -136,23 +175,28 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
 
                 optimizer.zero_grad()
                 outputs = net(inputs)
-                print(" Output.size = ", outputs.size())
-                print(" Output = ", outputs)
+                #print(" Output.size = ", outputs.size())
+                #print(" Output = ", outputs)
                 #print(" -- Gets Here -- ")
                 loss = criterion(outputs, outcomes)
                 loss.backward()
                 optimizer.step()
                 
-                print("  loss.item() = ",loss.item())
-                cur_cor = calc_cor(outputs, outcomes)
-                print("      cur_cor = ", cur_cor)
-                print("    --- End ---")
+                #print("  loss.item() = ",loss.item())
+                if (outc_idx == 3) or (outc_idx == 5):
+                    conv_outp = convert_outputs(outputs, outc)
+                    #print("post conv outputs = ", outputs)
+                    cur_cor = calc_cor(conv_outp, outcomes)
+                else:
+                    cur_cor = calc_cor(outputs, outcomes)
+                #print("      cur_cor = ", cur_cor)
+                #print("    --- End ---")
                 fold_trn_acc += cur_cor
                 fold_trn_loss += loss.item()
                 fold_data += len(outcomes)
             trn_acc[fold] = float(fold_trn_acc) / fold_data
             trn_loss[fold] = float(fold_trn_loss) / (i+1)
-            val_acc[fold], val_loss[fold] = validate(net, val_load, criterion)
+            val_acc[fold], val_loss[fold] = validate(net, val_load, criterion, outc)
             print(("    Fold {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(fold + 1, trn_acc[fold], trn_loss[fold], val_acc[fold], val_loss[fold]))
         ep_trn_acc[epoch] = np.mean(trn_acc)
         ep_trn_loss[epoch] = np.mean(trn_loss)
