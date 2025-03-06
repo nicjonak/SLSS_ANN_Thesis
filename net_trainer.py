@@ -27,7 +27,7 @@ def Log_Convert(outcomes, outc):
         elif out1 == 2:
             out1 = 1
         else:
-            print("ERROR: ODI4 value other than 1 or 2 shouldn't ")
+            print("ERROR: ODI4 value other than 1 or 2 shouldn't happen")
     tmp1 = torch.zeros(1,2)
     tmp1[0,out1] = 1
     ret = tmp1
@@ -41,7 +41,7 @@ def Log_Convert(outcomes, outc):
             elif out_val == 2:
                 out_val = 1
             else:
-                print("ERROR: ODI4 value other than 1 or 2 shouldn't ")
+                print("ERROR: ODI4 value other than 1 or 2 shouldn't happen")
         #print("  out_val = ", out_val)
         tmp_enc = torch.zeros(1,2)
         tmp_enc[0,out_val] = 1
@@ -115,7 +115,9 @@ def validate(net, dataset, criterion, outc):
     loss = float(total_loss) / (i+1)
     return acc, loss
 
-def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
+def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num):
+    path = "../"+outc+"Net"+str(save_num)
+    print("path = ", path)
     outc_idx = outcome_to_index[outc]
     print("outc = ", outc)
     print("outc_idx = ", outc_idx)
@@ -131,11 +133,16 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
     ep_val_acc = np.zeros(epochs)
     ep_val_loss = np.zeros(epochs)
 
+    trn_acc = np.zeros((epochs, folds))
+    trn_loss = np.zeros((epochs, folds))
+    val_acc = np.zeros((epochs, folds))
+    val_loss = np.zeros((epochs, folds))
+
     for epoch in range(epochs):
-        trn_acc = np.zeros(folds)
-        trn_loss = np.zeros(folds)
-        val_acc = np.zeros(folds)
-        val_loss = np.zeros(folds)
+        #trn_acc = np.zeros(folds)
+        #trn_loss = np.zeros(folds)
+        #val_acc = np.zeros(folds)
+        #val_loss = np.zeros(folds)
 
         #for epoch in range(epochs)
         splits = [1/folds] * folds
@@ -194,12 +201,23 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc):
                 fold_trn_acc += cur_cor
                 fold_trn_loss += loss.item()
                 fold_data += len(outcomes)
-            trn_acc[fold] = float(fold_trn_acc) / fold_data
-            trn_loss[fold] = float(fold_trn_loss) / (i+1)
-            val_acc[fold], val_loss[fold] = validate(net, val_load, criterion, outc)
-            print(("    Fold {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(fold + 1, trn_acc[fold], trn_loss[fold], val_acc[fold], val_loss[fold]))
-        ep_trn_acc[epoch] = np.mean(trn_acc)
-        ep_trn_loss[epoch] = np.mean(trn_loss)
-        ep_val_acc[epoch] = np.mean(val_acc)
-        ep_val_loss[epoch] = np.mean(val_loss)
+            trn_acc[epoch, fold] = float(fold_trn_acc) / fold_data
+            trn_loss[epoch, fold] = float(fold_trn_loss) / (i+1)
+            val_acc[epoch, fold], val_loss[epoch, fold] = validate(net, val_load, criterion, outc)
+            print(("    Fold {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(fold + 1, trn_acc[epoch, fold], trn_loss[epoch, fold], val_acc[epoch, fold], val_loss[epoch, fold]))
+        ep_trn_acc[epoch] = np.mean(trn_acc[epoch])
+        ep_trn_loss[epoch] = np.mean(trn_loss[epoch])
+        ep_val_acc[epoch] = np.mean(val_acc[epoch])
+        ep_val_loss[epoch] = np.mean(val_loss[epoch])
         print(("  Epoch {}: Avg Train Acc: {:.5f}, Avg Train Loss: {:.5f} | "+"Avg Val Acc: {:.5f}, Avg Val Loss: {:.5f}").format(epoch + 1, ep_trn_acc[epoch], ep_trn_loss[epoch], ep_val_acc[epoch], ep_val_loss[epoch]))
+    
+    torch.save(net.state_dict(), path)
+    np.savetxt("{}_train_acc.csv".format(path), trn_acc)
+    np.savetxt("{}_train_loss.csv".format(path), trn_loss)
+    np.savetxt("{}_val_acc.csv".format(path), val_acc)
+    np.savetxt("{}_val_loss.csv".format(path), val_loss)
+
+    np.savetxt("{}_ep_train_acc.csv".format(path), ep_trn_acc)
+    np.savetxt("{}_ep_train_loss.csv".format(path), ep_trn_loss)
+    np.savetxt("{}_ep_val_acc.csv".format(path), ep_val_acc)
+    np.savetxt("{}_ep_val_loss.csv".format(path), ep_val_loss)
