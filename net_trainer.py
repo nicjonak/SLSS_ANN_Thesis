@@ -1,3 +1,6 @@
+#Net Trainer
+#Functions to Train and Validate nets along with Helper funcs 
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -13,13 +16,9 @@ outcome_to_index = {
         "Recovery": 5
         }
 
-
-
-
+#Convert categorical outcomes to One-Hot outcome vectors
 def Log_Convert(outcomes, outc):
     outc_idx = outcome_to_index[outc]
-    #print("  Outcomes.size = ", outcomes.size())
-    #print("  Outcomes = ", outcomes)
     out1 = int(outcomes[0,0].item())
     if (outc_idx == 3):
         if out1 == 1:
@@ -31,9 +30,8 @@ def Log_Convert(outcomes, outc):
     tmp1 = torch.zeros(1,2)
     tmp1[0,out1] = 1
     ret = tmp1
-    #print("  RET = ", ret)
+    
     for i in range(1,len(outcomes)):
-        #print("        i = ", i)
         out_val = int(outcomes[i,0].item())
         if (outc_idx == 3):
             if out_val == 1:
@@ -42,35 +40,33 @@ def Log_Convert(outcomes, outc):
                 out_val = 1
             else:
                 print("ERROR: ODI4 value other than 1 or 2 shouldn't happen")
-        #print("  out_val = ", out_val)
+
         tmp_enc = torch.zeros(1,2)
         tmp_enc[0,out_val] = 1
-        #print("  tmp_enc = ", tmp_enc)
         ret = torch.cat((ret,tmp_enc), 0)
-    #print("      ret = ", ret)
-        #outcomes[i,0] = tmp_enc
-        #print(" outcomes = ",outcomes)
     return ret
 
-
+#Convert net outputs for comparison, Currently written for categorical outcomes to round probability vector to prediction vector
 def convert_outputs(outputs, outc):
     outc_idx = outcome_to_index[outc]
     ret = outputs.clone().detach()
     for i in range(0,len(outputs)):
-        #print("Pre Round outputs[",i,"] = ",outputs[i])
-        #print("Rounded outputs[",i,"] = ",torch.round(outputs[i]))
         ret[i] = torch.round(ret[i])
-    #print("Post Round ret = ", ret)
     return ret
 
+#Round net outputs for comparison, Currently written for continuous outcomes to round decimal continous outcomes to nearest dichotomized box
+def round_outputs(outputs, outc):
+    outc_idx = outcome_to_index[outc]
+    ret = outputs.clone().detach()
+    for i in range(0,len(outputs)):
+        ret[i] = torch.round(ret[i])
+    #print("ret = ", ret)
+    return ret
 
-
-
-
+#Calculate number of correct net predicted outputs against true outcomes
 def calc_cor(outputs, outcomes):
     total_cor = 0
     if len(outputs) == len(outcomes):
-        #print(" -- Gets In Calc_Cor --")
         for i in range(0,len(outputs)):
 
             if torch.equal(outputs[i], outcomes[i]):
@@ -80,6 +76,7 @@ def calc_cor(outputs, outcomes):
         return 0.0
     return total_cor
 
+#Validate net over given dataset with given criterion
 def validate(net, dataset, criterion, outc):
     outc_idx = outcome_to_index[outc]
     total_loss = 0.0
@@ -104,10 +101,10 @@ def validate(net, dataset, criterion, outc):
 
         if (outc_idx == 3) or (outc_idx == 5):
             conv_outp = convert_outputs(outputs, outc)
-            #print("post conv outputs = ", outputs)
             cur_cor = calc_cor(conv_outp, outcomes)
         else:
-            cur_cor = calc_cor(outputs, outcomes)
+            round_outp = round_outputs(outputs, outc)
+            cur_cor = calc_cor(round_outp, outcomes)
         total_acc += cur_cor
         total_loss += loss.item()
         total_data += len(outcomes)
@@ -115,6 +112,7 @@ def validate(net, dataset, criterion, outc):
     loss = float(total_loss) / (i+1)
     return acc, loss
 
+#Train net using given hyperparameters and data, save final net, acc, and loss into .csv files
 def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num):
     path = "../"+outc+"Net"+str(save_num)
     print("path = ", path)
@@ -126,7 +124,9 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
         #criterion = nn.BCELoss()
     else:
         criterion = nn.MSELoss()
-    optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
+
+    #optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
+    optimizer = optim.Adam(net.parameters(), lr=lrn_rate)
 
     ep_trn_acc = np.zeros(epochs)
     ep_trn_loss = np.zeros(epochs)
@@ -167,9 +167,9 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
                 outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
                 if (outc_idx == 3) or (outc_idx == 5):
                     outcomes = Log_Convert(outcomes, outc)
-                #print("    --- Start ---")
-                #print(" Outcomes.size = ", outcomes.size())
-                #print(" Outcomes = ", outcomes)
+                print("    --- Start ---")
+                print(" Outcomes.size = ", outcomes.size())
+                print(" Outcomes = ", outcomes)
                 #print(" Outcomes[BackPain] = ", outcomes[:,0])
                 #return
 
@@ -182,22 +182,24 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
 
                 optimizer.zero_grad()
                 outputs = net(inputs)
-                #print(" Output.size = ", outputs.size())
-                #print(" Output = ", outputs)
+                print(" Output.size = ", outputs.size())
+                print(" Output = ", outputs)
                 #print(" -- Gets Here -- ")
                 loss = criterion(outputs, outcomes)
                 loss.backward()
                 optimizer.step()
                 
-                #print("  loss.item() = ",loss.item())
+                print("  loss.item() = ",loss.item())
                 if (outc_idx == 3) or (outc_idx == 5):
                     conv_outp = convert_outputs(outputs, outc)
                     #print("post conv outputs = ", outputs)
                     cur_cor = calc_cor(conv_outp, outcomes)
                 else:
-                    cur_cor = calc_cor(outputs, outcomes)
-                #print("      cur_cor = ", cur_cor)
-                #print("    --- End ---")
+                    round_outp = round_outputs(outputs, outc)
+                    #print("post round outputs = ", outputs)
+                    cur_cor = calc_cor(round_outp, outcomes)
+                print("      cur_cor = ", cur_cor)
+                print("    --- End ---")
                 fold_trn_acc += cur_cor
                 fold_trn_loss += loss.item()
                 fold_data += len(outcomes)

@@ -1,3 +1,6 @@
+#Temp Main
+#Temporary Main file, contains train and test functions that intiate, visualize, and time training and testing
+
 import time
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -6,6 +9,7 @@ from test_nets import *
 from net_trainer import *
 from data_visualizer import *
 
+#Trains given net with given hyperparameters
 def train(net, batch, ts_per, lrn_rate, mntum, folds, epochs, outc, save_num):
     print("--- Starting Training ---")
     start_time = time.time()
@@ -24,11 +28,13 @@ def train(net, batch, ts_per, lrn_rate, mntum, folds, epochs, outc, save_num):
     elapsed_time = end_time - start_time
     print("Total Training Time: {:.2f} seconds".format(elapsed_time))
     print()
-    plot_training(True, outc, save_num)
+    one_epoch = True if epochs == 1 else False
+    #print("one_epoch = ", one_epoch)
+    plot_training(True, outc, save_num, one_epoch)
     return ts_load
 
-
-def test(net, dataset, outc, save_num):
+#Tests net (Specified by outc and save_num) on given dataset [ne, nf used for graphing test lines on the train/val graphs]
+def test(net, dataset, outc, save_num, nf, ne):
     print("--- Starting Testing ---")
     path = "../"+outc+"Net"+str(save_num)
     #print("path = ", path)
@@ -52,27 +58,70 @@ def test(net, dataset, outc, save_num):
     ts_acc,ts_loss = validate(net, dataset, criterion, outc)
     print(("Test Acc: {}, Test Loss: {}").format(ts_acc, ts_loss))
     print("--- Finished Testing ---")
+    x_pnts = np.arange(ne*nf)
+    ts_acc_pnts = np.repeat(ts_acc, ne*nf)
+    ts_loss_pnts = np.repeat(ts_loss, ne*nf)
+    plt.subplot(1, 2, 1)
+    plt.plot(x_pnts, ts_acc_pnts, label="Test")
+    plt.subplot(1, 2, 2)
+    plt.plot(x_pnts, ts_loss_pnts, label="Test")
+
+
+#Below is code using/calling the train and test functions (for debug/model building/running/etc)
 
 
 #train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 2, "BackPain")
 #train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 10, "EQ_IndexTL12")
-"""
-print("")
-print("         --- Break ---")
-print("")
-"""
-#ts = train(recovery_net(), 10, 0.1, 0.0005, 0.8, 10, 3, "Recovery", 0)
 
-ts = train(recovery_net(), 10, 0.1, 0.0001, 0.6, 10, 100, "Recovery", 0)
-#print("         ----- GETS HERE -----")
-#train(recovery_net(), 10, 0.1, 0.0005, 0.8, 5, 2, "Recovery", 0)
-#print("         ----- GETS HERE 2 -----")
-test(recovery_net(), ts, "Recovery", 0)
+#ODI Score testing
+
+batch = 10
+ts_per = 0.1
+lr = 0.01
+mntum = 0.9
+nf = 10
+ne = 3
+outc = "ODIScore"
+save_num = 0
+ts = train(odiscore_net(), batch, ts_per, lr, mntum, nf, ne, outc, save_num)
+test(odiscore_net(), ts, outc, save_num, nf, ne)
+plt.show()
+
+#ODI4 Final Testing
+"""
+batch = 10
+ts_per = 0.1
+lr = 0.01
+mntum = 0.9
+nf = 10
+ne = 5
+outc = "ODI4_Final"
+save_num = 0
+ts = train(recovery_net(), batch, ts_per, lr, mntum, nf, ne, outc, save_num)
+test(recovery_net(), ts, outc, save_num, nf, ne)
 plt.show()
 """
-print("")
-print("         --- Break ---")
-print("")
 
-train(smplNetLog(), 10, 0.1, 0.01, 0.5, 10, 2, "ODI4_Final")
+#Back Pain Testing
 """
+batch = 10
+ts_per = 0.1
+lr = 0.01
+mntum = 0.9
+nf = 10
+ne = 10
+outc = "BackPain"
+save_num = 0
+ts = train(backpain_net(), batch, ts_per, lr, mntum, nf, ne, outc, save_num)
+test(backpain_net(), ts, outc, save_num, nf, ne)
+plt.show()
+"""
+
+
+
+"""
+ts = train(recovery_net(), 10, 0.1, 0.01, 0.9, 10, 10, "Recovery", 0)
+test(recovery_net(), ts, "Recovery", 0, 10, 1)
+plt.show()
+"""
+

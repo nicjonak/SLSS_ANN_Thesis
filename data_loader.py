@@ -8,25 +8,29 @@ from torch.utils.data import Dataset, DataLoader
 #Custom Dataset class for the CSORN data
 class SLSSDataset(Dataset):
     def __init__(self, xls_file, transform=None):
-        self.data_tensor = torch.from_numpy(pd.read_excel(xls_file).to_numpy())
+        self.data_tensor = torch.from_numpy(pd.read_excel(xls_file).to_numpy()) #Read CSORN excel file into numpy array using pandas
     
     def __len__(self):
         return len(self.data_tensor)
     
     def __getitem__(self, idx):
-        pred = self.data_tensor[idx,1:-11]
-        outc = self.data_tensor[idx,-11:-5]
+        pred = self.data_tensor[idx,1:-11] #Separate predictors from data
+        outc = self.data_tensor[idx,-11:-5] #Separate outcomes from data
         sample = {'predictors': pred, 'outcomes': outc}
         return sample
 
-#load_data function, inputs batch size and test split percentage, outputs randomly split train/val and test datasets
+#load_data function, inputs test split percentage, outputs randomly split train/val and test datasets
 def load_data(ts_per):
-    xls_file = '../CSORN_Edit.xls'
+    xls_file = '../CSORN_Edit.xls' #Specify path to CSORN excel file
+    """
     #df = pd.read_excel(xls_file)
     #print("df[0] = ", df.iloc[0])
-    data_set = SLSSDataset(xls_file)
+    """
+    data_set = SLSSDataset(xls_file) #Read CSORN data into dataset
+    """
     #print("Dataset[0] = ", data_set[0])
-
+    """
+    #Specify data splits
     splits = len(data_set)
     ts_split = int(splits * ts_per)
     tv_split = splits - ts_split
@@ -35,6 +39,7 @@ def load_data(ts_per):
     print("Train/Val Data: ",tv_split)
     print("Test Data: ",ts_split)
 
+    #Split data and return splits
     if (ts_per == 0 or ts_per == 0.0):
         """
         tv_load = DataLoader(data_set, batch_size=batch, shuffle=True)
