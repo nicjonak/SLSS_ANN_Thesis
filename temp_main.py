@@ -73,8 +73,23 @@ def test(net, dataset, outc, save_num, nf, ne):
 #train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 2, "BackPain")
 #train(smplNetCnt(), 10, 0.1, 0.001, 0.1, 10, 10, "EQ_IndexTL12")
 
-#ODI Score testing
+#EQ IndexTL12 testing
 
+batch = 10
+ts_per = 0.1
+lr = 0.01
+mntum = 0.9
+nf = 10
+ne = 5
+outc = "EQ_IndexTL12"
+save_num = 0
+ts = train(eqidxtl12_net(), batch, ts_per, lr, mntum, nf, ne, outc, save_num)
+test(eqidxtl12_net(), ts, outc, save_num, nf, ne)
+plt.show()
+
+
+#ODI Score testing
+"""
 batch = 10
 ts_per = 0.1
 lr = 0.01
@@ -86,6 +101,7 @@ save_num = 0
 ts = train(odiscore_net(), batch, ts_per, lr, mntum, nf, ne, outc, save_num)
 test(odiscore_net(), ts, outc, save_num, nf, ne)
 plt.show()
+"""
 
 #ODI4 Final Testing
 """
