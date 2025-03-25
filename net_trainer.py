@@ -68,9 +68,9 @@ def calc_cor(outputs, outcomes):
     total_cor = 0
     if len(outputs) == len(outcomes):
         for i in range(0,len(outputs)):
-            print("i =", i)
-            print("outcomes[i] = ", outcomes[i])
-            print("outputs[i] = ", outputs[i])
+            #print("i =", i)
+            #print("outcomes[i] = ", outcomes[i])
+            #print("outputs[i] = ", outputs[i])
 
             if torch.equal(outputs[i], outcomes[i]):
                 total_cor+=1
@@ -112,6 +112,11 @@ def validate(net, dataset, criterion, outc):
         if (outc_idx == 3) or (outc_idx == 5):
             outcomes = Log_Convert(outcomes, outc)
 
+        #print(" Inputs.size = ", inputs.size())
+        #print(" Inputs = ", inputs)
+        #print(" Outcomes.size = ", outcomes.size())
+        #print(" Outcomes = ", outcomes)
+
         if torch.cuda.is_available() == True:
             inputs = inputs.cuda()
             outcomes = outcomes.cuda()
@@ -140,6 +145,8 @@ def validate(net, dataset, criterion, outc):
     loss = float(total_loss) / (i+1)
     return acc, loss
 
+"""
+#OLD CODE PRESERVED
 #Train net using given hyperparameters and data, save final net, acc, and loss into .csv files
 def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num):
     path = "../"+outc+"Net"+str(save_num)
@@ -181,8 +188,12 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
             trn_list = tv_folds.copy()
             trn_list.pop(fold)
             trn_data = torch.utils.data.ConcatDataset(trn_list)
-            val_load = DataLoader(val_data, batch_size=batch, shuffle=True)
-            trn_load = DataLoader(trn_data, batch_size=batch, shuffle=True)
+
+            #print("len val_data = ", len(val_data))
+            #print("len trn_data = ", len(trn_data))
+
+            val_load = DataLoader(val_data, batch_size=batch, shuffle=True, drop_last=True)
+            trn_load = DataLoader(trn_data, batch_size=batch, shuffle=True, drop_last=True)
 
             fold_trn_loss = 0.0
             fold_trn_acc = 0.0
@@ -257,3 +268,94 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
     np.savetxt("{}_ep_train_loss.csv".format(path), ep_trn_loss)
     np.savetxt("{}_ep_val_acc.csv".format(path), ep_val_acc)
     np.savetxt("{}_ep_val_loss.csv".format(path), ep_val_loss)
+"""
+
+
+def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num):
+    path = "../"+outc+"Net"+str(save_num)
+    #print("path = ", path)
+    outc_idx = outcome_to_index[outc]
+    #print("outc = ", outc)
+    #print("outc_idx = ", outc_idx)
+    #print()
+    if (outc_idx == 3) or (outc_idx == 5):
+        criterion = nn.CrossEntropyLoss()
+        #criterion = nn.BCELoss()
+    else:
+        criterion = nn.MSELoss()
+
+    optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
+    #optimizer = optim.Adam(net.parameters(), lr=lrn_rate)
+
+
+    trn_acc = np.zeros(epochs)
+    trn_loss = np.zeros(epochs)
+    val_acc = np.zeros(epochs)
+    val_loss = np.zeros(epochs)
+
+    for epoch in range(epochs):
+
+        ep_trn_loss = 0.0
+        ep_trn_acc = 0.0
+        ep_data = 0
+
+        for i, data in enumerate(trn_load):
+            inputs = data['predictors']
+            outcomes = data['outcomes']
+            #outc_idx = outcome_to_index[outc]
+            outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
+            if (outc_idx == 3) or (outc_idx == 5):
+                outcomes = Log_Convert(outcomes, outc)
+            #print("    --- Start ---")
+            #print(" Outcomes.size = ", outcomes.size())
+            #print(" Outcomes = ", outcomes)
+            #print(" Outcomes[BackPain] = ", outcomes[:,0])
+            #return
+
+            if torch.cuda.is_available() == True:
+                inputs = inputs.cuda()
+                outcomes = outcomes.cuda()
+                #print("Using cuda")
+            else:
+                print("Using CPU")
+
+            optimizer.zero_grad()
+            outputs = net(inputs)
+            #print(" Output.size = ", outputs.size())
+            #print(" Output = ", outputs)
+            #print(" -- Gets Here -- ")
+            loss = criterion(outputs, outcomes)
+            loss.backward()
+            optimizer.step()
+            
+            #print("  loss.item() = ",loss.item())
+            if (outc_idx == 3) or (outc_idx == 5):
+                conv_outp = convert_outputs(outputs, outc)
+                #print("post conv outputs = ", outputs)
+                cur_cor = calc_cor(conv_outp, outcomes)
+            elif (outc_idx == 4): #if using EQ IdxTL12 calculate error of output rather than number of correct predictions for accuracy
+                cur_cor = calc_err(outputs, outcomes)
+            else:
+                round_outp = round_outputs(outputs, outc)
+                #print("post round outputs = ", outputs)
+                cur_cor = calc_cor(round_outp, outcomes)
+            #print("      cur_cor = ", cur_cor)
+            ep_trn_acc += cur_cor
+            #print("      ep_train_acc = ", ep_trn_acc)
+            #print("    --- End ---")
+            ep_trn_loss += loss.item()
+            ep_data += len(outcomes)
+        if (outc_idx == 4): #if using EQ IdxTL12 use error of output to calculate accuracy
+            trn_acc[epoch] = 1 - (float(ep_trn_acc) / ep_data)
+        else:
+            trn_acc[epoch] = float(ep_trn_acc) / ep_data
+        trn_loss[epoch] = float(ep_trn_loss) / (i+1)
+        val_acc[epoch], val_loss[epoch] = validate(net, val_load, criterion, outc)
+        print(("    Epoch {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(epoch, trn_acc[epoch], trn_loss[epoch], val_acc[epoch], val_loss[epoch]))
+
+    
+    torch.save(net.state_dict(), path)
+    np.savetxt("{}_train_acc.csv".format(path), trn_acc)
+    np.savetxt("{}_train_loss.csv".format(path), trn_loss)
+    np.savetxt("{}_val_acc.csv".format(path), val_acc)
+    np.savetxt("{}_val_loss.csv".format(path), val_loss)

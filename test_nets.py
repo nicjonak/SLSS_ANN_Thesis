@@ -784,7 +784,11 @@ class eqidxtl12_net(nn.Module):
         #print("xcatemb.size = ", xcatemb.size())
         #print(" xcatemb = ", xcatemb)
 
+        #print("pre bn xcon = ", xcon)
+
         xcon = self.conbn_layer(xcon)
+
+        #print("post bn xcon = ", xcon)
 
         #print("xcatemb.size = ", xcatemb.size())
         #print("xcon.size = ", xcon.size())
@@ -794,7 +798,11 @@ class eqidxtl12_net(nn.Module):
         #print("xin.size = ", xin.size())
         #print("xin = ", xin)
 
+        #print("Gets Here pre smplReg")
+
         output = self.smplReg(xin)
+
+        #print("Gets Here post smplReg")
 
         #output = torch.mul(output, 100)
         #output = torch.round(output)
@@ -881,18 +889,23 @@ class odiscore_net(nn.Module):
         self.conbn_layer = nn.BatchNorm1d(7)
 
         self.smplReg = nn.Sequential(
-                nn.Linear(36, 48),
-                nn.BatchNorm1d(48),
+                nn.Linear(36, 64),
+                nn.BatchNorm1d(64),
                 nn.ReLU(),
-                nn.Linear(48, 24),
-                nn.BatchNorm1d(24),
+                nn.Dropout(p=0.0001),
+                nn.Linear(64, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.0005),
+                nn.Linear(64, 40),
+                nn.BatchNorm1d(40),
                 nn.ReLU(),
                 nn.Dropout(p=0.001),
-                nn.Linear(24, 12),
-                nn.BatchNorm1d(12),
+                nn.Linear(40, 16),
+                nn.BatchNorm1d(16),
                 nn.ReLU(),
                 nn.Dropout(p=0.01),
-                nn.Linear(12, 1),
+                nn.Linear(16, 1),
                 nn.Sigmoid()
                 )
         
