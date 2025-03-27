@@ -91,7 +91,7 @@ def calc_err(outputs, outcomes):
             #print("outputs[",i,"] = ", outp)
             #print("err[",i,"] = ", abs(outp - outc))
 
-            total_err+= abs(outp - outc)
+            total_err+= abs(outp - outc) / ((outp + outc)/2)
             
     else:
         print("ERROR: calc_err(): outputs and outcomes different size")
@@ -130,18 +130,18 @@ def validate(net, dataset, criterion, outc):
         if (outc_idx == 3) or (outc_idx == 5):
             conv_outp = convert_outputs(outputs, outc)
             cur_cor = calc_cor(conv_outp, outcomes)
-        elif (outc_idx == 4): #if using EQ IdxTL12 calculate error of output rather than number of correct predictions for accuracy
-            cur_cor = calc_err(outputs, outcomes)
         else:
-            round_outp = round_outputs(outputs, outc)
-            cur_cor = calc_cor(round_outp, outcomes)
+            cur_cor = calc_err(outputs, outcomes)
+
         total_acc += cur_cor
         total_loss += loss.item()
         total_data += len(outcomes)
-    if (outc_idx == 4): #if using EQ IdxTL12 use error of output to calculate accuracy
-        acc = 1 - (float(total_acc) / total_data)
-    else:
+
+    if (outc_idx == 3) or (outc_idx == 5):
         acc = float(total_acc) / total_data
+    else:
+        acc = 1 - (float(total_acc) / total_data)
+
     loss = float(total_loss) / (i+1)
     return acc, loss
 
@@ -333,22 +333,22 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
                 conv_outp = convert_outputs(outputs, outc)
                 #print("post conv outputs = ", outputs)
                 cur_cor = calc_cor(conv_outp, outcomes)
-            elif (outc_idx == 4): #if using EQ IdxTL12 calculate error of output rather than number of correct predictions for accuracy
-                cur_cor = calc_err(outputs, outcomes)
             else:
-                round_outp = round_outputs(outputs, outc)
-                #print("post round outputs = ", outputs)
-                cur_cor = calc_cor(round_outp, outcomes)
+                cur_cor = calc_err(outputs, outcomes)
+
             #print("      cur_cor = ", cur_cor)
             ep_trn_acc += cur_cor
             #print("      ep_train_acc = ", ep_trn_acc)
-            #print("    --- End ---")
             ep_trn_loss += loss.item()
             ep_data += len(outcomes)
-        if (outc_idx == 4): #if using EQ IdxTL12 use error of output to calculate accuracy
-            trn_acc[epoch] = 1 - (float(ep_trn_acc) / ep_data)
-        else:
+            #print("      ep_data = ", ep_data)
+            #print("    --- End ---")
+
+        if (outc_idx == 3) or (outc_idx == 5):
             trn_acc[epoch] = float(ep_trn_acc) / ep_data
+        else:
+            trn_acc[epoch] = 1 - (float(ep_trn_acc) / ep_data)
+
         trn_loss[epoch] = float(ep_trn_loss) / (i+1)
         val_acc[epoch], val_loss[epoch] = validate(net, val_load, criterion, outc)
         print(("    Epoch {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(epoch, trn_acc[epoch], trn_loss[epoch], val_acc[epoch], val_loss[epoch]))

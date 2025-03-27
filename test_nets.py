@@ -344,18 +344,23 @@ class backpain_net(nn.Module):
         self.conbn_layer = nn.BatchNorm1d(7)
 
         self.smplReg = nn.Sequential(
-                nn.Linear(36, 36),
-                nn.BatchNorm1d(36),
+                nn.Linear(36, 64),
+                nn.BatchNorm1d(64),
                 nn.ReLU(),
-                nn.Linear(36, 18),
-                nn.BatchNorm1d(18),
+                nn.Dropout(p=0.0001),
+                nn.Linear(64, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.0005),
+                nn.Linear(64, 40),
+                nn.BatchNorm1d(40),
                 nn.ReLU(),
                 nn.Dropout(p=0.001),
-                nn.Linear(18, 9),
-                nn.BatchNorm1d(9),
+                nn.Linear(40, 16),
+                nn.BatchNorm1d(16),
                 nn.ReLU(),
                 nn.Dropout(p=0.01),
-                nn.Linear(9, 1),
+                nn.Linear(16, 1),
                 nn.Sigmoid()
                 )
         
@@ -539,7 +544,7 @@ class backpain_net(nn.Module):
         output = self.smplReg(xin)
 
         output = torch.mul(output, 10)
-        output = torch.round(output)
+        #output = torch.round(output)
 
         #print("output.size = ", output.size())
         #print("output = ", output)
