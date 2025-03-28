@@ -5,6 +5,7 @@ import torch
 from net_trainer import *
 from data_loader import * #temp for debugging
 from test_nets import * #temp for debugging
+import random #temp for debugging
 
 def evaluate_net(net, dataset, outc, save_num):
     print("--- Starting Evaluation ---")
@@ -48,10 +49,17 @@ def evaluate_net(net, dataset, outc, save_num):
 
         
 #temp for debugging
-"""
-tv_data, ts_data = load_data(0.1)
-ts_load = DataLoader(ts_data, batch_size=10, shuffle=True)
+
+folds = 10
+tvs_data = load_data()
+splits = [1/folds] * folds
+tvs_folds = torch.utils.data.random_split(tvs_data, splits)
+fold = random.randrange(folds)
+print("Test Fold: ", fold)
+
+ts_data = tvs_folds[fold]
+ts_load = DataLoader(ts_data, batch_size=10, shuffle=True, drop_last=True)
+
 outc = "EQ_IndexTL12"
 save_num = 0
 evaluate_net(eqidxtl12_net(), ts_load, outc, save_num)
-"""

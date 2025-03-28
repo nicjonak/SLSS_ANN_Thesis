@@ -271,7 +271,7 @@ def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num
 """
 
 
-def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num):
+def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num, Trace):
     path = "../"+outc+"Net"+str(save_num)
     #print("path = ", path)
     outc_idx = outcome_to_index[outc]
@@ -351,7 +351,8 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
 
         trn_loss[epoch] = float(ep_trn_loss) / (i+1)
         val_acc[epoch], val_loss[epoch] = validate(net, val_load, criterion, outc)
-        print(("    Epoch {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(epoch, trn_acc[epoch], trn_loss[epoch], val_acc[epoch], val_loss[epoch]))
+        if Trace:
+            print(("    Epoch {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(epoch, trn_acc[epoch], trn_loss[epoch], val_acc[epoch], val_loss[epoch]))
 
     
     torch.save(net.state_dict(), path)
