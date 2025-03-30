@@ -377,20 +377,25 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
-    print("avg_net_true_err = ", avg_net_true_err)
+    #print(" avg_net_true_err = ", avg_net_true_err)
     #print("avg_noise_in_err = ", avg_noise_in_err)
-    print("avg_noise_out_err = ", avg_noise_out_err)
+    #print(" avg_noise_out_err = ", avg_noise_out_err)
 
     scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
-    print("scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
+    #print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
 
     sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
-    print("sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
+    #print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
 
     vimp = sub_scaled_avg_noise_out_err * 10
-    print("vimp = ", vimp)
+    print(" vimp = ", vimp)
+
+    for f in range(lp):
+        if vimp[f] >= 1:
+            print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[f], vimp[f]))
 
     print("--- Finished Evaluation ---")
+    return vimp
 
         
 #temp for debugging
