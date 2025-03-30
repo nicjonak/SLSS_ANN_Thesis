@@ -439,6 +439,8 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
     if (outc_idx == 3) or (outc_idx == 5):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
+    elif (outc_idx == 2):
+        criterion = nn.L1Loss()
     else:
         criterion = nn.MSELoss()
     
@@ -477,7 +479,7 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
 #Flow will be: call hp_search, use best hp with cross_validate=True, if cv okay use best hp with cross_validate=False, use returned ts_data and saved net for net_analysis
 
 #EQ IndexTL12 testing - G:3/28
-
+"""
 batch = 10
 val_per = 0.2
 lr = 0.001
@@ -506,32 +508,32 @@ epochs_min = 30
 epochs_max = 30
 epochs_itr = 1
 
-hp_search(eqidxtl12_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, True)
-
+#hp_search(eqidxtl12_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, True)
+"""
 
 #ODI Score testing
-"""
+
 batch = 10
 val_per = 0.2
-lr = 0.001
+lr = 0.0001
 mntum = 0.8
-nf = 5
-ne = 50
+nf = 10
+ne = 30
 outc = "ODIScore"
 save_num = 0
 ts = train(odiscore_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 #test(odiscore_net(), ts, outc, save_num, nf, ne)
 plt.show()
-"""
+
 
 #ODI4 Final Testing - G:3/24
 """
 batch = 10
 val_per = 0.2
-lr = 0.001
-mntum = 0.8
-nf = 5
-ne = 100
+lr = 0.0005
+mntum = 0.9
+nf = 10
+ne = 30
 outc = "ODI4_Final"
 save_num = 0
 ts = train(recovery_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)

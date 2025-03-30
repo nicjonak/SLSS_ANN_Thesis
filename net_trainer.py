@@ -20,7 +20,7 @@ outcome_to_range = {
         "BackPain": 10,
         "LegPain": 10,
         "ODIScore": 100,
-        "ODI4_Final": 2,
+        "ODI4_Final": 1,
         "EQ_IndexTL12": 1,
         "Recovery": 1
         }
@@ -290,6 +290,8 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
     if (outc_idx == 3) or (outc_idx == 5):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
+    elif (outc_idx == 2):
+        criterion = nn.L1Loss()
     else:
         criterion = nn.MSELoss()
 
