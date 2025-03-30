@@ -59,8 +59,8 @@ predictor_to_range = {
         "Married": 1,
         "Education": 1,
         "Smoke": 1,
-        "Exercise": 3,
-        "WorkStatus": 3,
+        "Exercise": 2,
+        "WorkStatus": 2,
         "Chiro_New": 3,
         "Physio_New": 3,
         "Trainer": 3,
@@ -180,6 +180,8 @@ def calc_error(true, noise, outc):
     #print("total_err = ", total_err)
     return total_err
 
+
+
 def evaluate_net(net, dataset, outc, save_num, one_point):
     print("--- Starting Evaluation ---")
     path = "../"+outc+"Net"+str(save_num)
@@ -196,6 +198,16 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
         print("Using CPU")
 
     net.load_state_dict(torch.load(path))
+
+    for dt in dataset:
+        #print("len data = ", len(dataset))
+        #print("len pred = ", len(dt['predictors'].clone().detach()[1]))
+        lp = len(dt['predictors'].clone().detach()[1])
+        break
+    
+    noise_in_errl = np.zeros((len(dataset),lp))
+    noise_out_errl = np.zeros((len(dataset),lp))
+    net_true_errl = np.zeros(len(dataset))
 
     #Either add break or counter to limit from single data point to entire test set used and averaged to find the critical predictors
     for i, data in enumerate(dataset):
@@ -219,24 +231,21 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             print("Using CPU")
 
         true_outputs = net(inputs)
-        print(" true_outputs = ", true_outputs)
+        #print(" true_outputs = ", true_outputs)
+        for q in range(100):
+            temp_outputs = net(inputs)
+            net_true_errl[i] += calc_error(true_outputs, temp_outputs, outc) / len(inputs)
+        net_true_errl[i] = net_true_errl[i] / 100
 
-        noise_out_err = np.zeros(num_pred)
-        noise_in_err = np.zeros(num_pred)
 
-        cont = 0
-        nomi = 0
-        ordi = 0
         for p in range(num_pred): # Loop through all predictors
             ninputs = inputs.clone().detach()
             if p < 7: # Continuous predictors
-                #continue
-                cont = cont + 1
-                print(p)
-                print(index_to_predictor[p])
+                #print(p)
+                #print(index_to_predictor[p])
                 #print(("{} : {}").format(index_to_predictor[p], inputs[:,p]))
-                print("std = ", ninputs[:,p].std().item())
-                print("idx std = ", index_to_std[p])
+                #print("std = ", ninputs[:,p].std().item())
+                #print("idx std = ", index_to_std[p])
                 std = ninputs[:,p].std().item()
 
                 for j in range(len(ninputs)): #Add noise to each data point in batch
@@ -251,51 +260,54 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                     ninputs[j,p] = ninputs[j,p] + noiset
                     #print("ninputs[j,p] = ", ninputs[j,p])
 
-                noise_in_err[p] = calc_in_error(inputs[:,p], ninputs[:,p], p)
-                #print("totinerr = ", noise_in_err[p])
-                print("totinerr/d = ", noise_in_err[p]/len(ninputs))
+                noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                #print("totinerr = ", noise_in_errl[i,p])
 
                 noise_outputs = net(ninputs)
                 #print(" noise_outputs = ", noise_outputs)
                 #print(" true_outputs = ", true_outputs)
 
-                noise_out_err[p] = calc_error(true_outputs, noise_outputs, outc)
-                #print("toterr = ", noise_out_err[p])
-                #print("toterr/d = ", noise_out_err[p]/len(ninputs))
+                noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs)
+                #print("toterr = ", noise_out_errl[i,p])
 
 
             else: # Categorical Predictors
                 if (p >= 7 and p <= 11) or (p >= 27 and p <= 35): # Binary/2Category Predictors
-                    nomi = nomi + 1
-                    print(p)
-                    print(index_to_predictor[p])
+                    #print(p)
+                    #print(index_to_predictor[p])
                     #print(("{} : {}").format(index_to_predictor[p], inputs[:,p]))
-                    print("std = ", ninputs[:,p].std().item())
-                    print("idx std = ", index_to_std[p])
+                    #print("std = ", ninputs[:,p].std().item())
+                    #print("idx std = ", index_to_std[p])
                     std = ninputs[:,p].std().item()
 
-                    print("in = ", ninputs[:,p])
+                    #print("in = ", ninputs[:,p])
                     for l in range(len(ninputs)):
                         if ninputs[l,p] == 0:
                             ninputs[l,p] = 1
                         else:
                             ninputs[l,p] = 0
-                    print("in = ", ninputs[:,p])
+                    #print("in = ", ninputs[:,p])
 
                     noise_outputs = net(ninputs)
                     #print(" noise_outputs = ", noise_outputs)
                     #print(" true_outputs = ", true_outputs)
+
+                    noise_in_errl[i,p] = 0.0 #calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                    #print("totinerr = ", noise_in_errl[i,p])
+
+                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs)
+                    #print("toterr = ", noise_out_errl[i,p])
+
                     #exit()
                 else:
-                    ordi = ordi + 1
-                    print(p)
-                    print(index_to_predictor[p])
+                    #print(p)
+                    #print(index_to_predictor[p])
                     #print(("{} : {}").format(index_to_predictor[p], ninputs[:,p]))
-                    print("std = ", ninputs[:,p].std().item())
-                    print("idx std = ", index_to_std[p])
+                    #print("std = ", ninputs[:,p].std().item())
+                    #print("idx std = ", index_to_std[p])
                     std = ninputs[:,p].std().item()
 
-                    for j in range(len(ninputs)): #Add noise to each data point in batch
+                    for k in range(len(ninputs)): #Add noise to each data point in batch
                         noise = torch.randn(1)
                         #noiset = noise * index_to_std[p]
                         if torch.cuda.is_available():
@@ -304,64 +316,56 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                         #print("noise = ", noise)
                         #print("noise * std = ", noiseb)
                         #print("noise * tot_std = ", noiset)
-                        #print("ninputs[j,p] = ", ninputs[j,p])
-                        ninputs[j,p] = ninputs[j,p] + noise
-                        #print("ninputs[j,p]n = ", ninputs[j,p])
-                        ninputs[j,p] = torch.round(ninputs[j,p])
-                        ninputs[j,p] = max(ninputs[j,p], 0)
-                        ninputs[j,p] = min(ninputs[j,p], predictor_to_range[index_to_predictor[p]])
-                        #print("rninputs[j,p]n = ", ninputs[j,p])
+                        #print("ninputs[k,p] = ", ninputs[k,p])
+                        ninputs[k,p] = ninputs[k,p] + noise
+                        #print("ninputs[k,p]n = ", ninputs[k,p])
+                        ninputs[k,p] = torch.round(ninputs[k,p])
+                        ninputs[k,p] = max(ninputs[k,p], 0)
+                        ninputs[k,p] = min(ninputs[k,p], predictor_to_range[index_to_predictor[p]])
+                        #print("rninputs[k,p]n = ", ninputs[k,p])
 
-                    noise_in_err[p] = calc_in_error(inputs[:,p], ninputs[:,p], p)
-                    #print("totinerr = ", noise_in_err[p])
-                    print("totinerr/d = ", noise_in_err[p]/len(ninputs))
+                    noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                    #print("totinerr = ", noise_in_errl[i,p])
 
                     noise_outputs = net(ninputs)
                     #print(" noise_outputs = ", noise_outputs)
                     #print(" true_outputs = ", true_outputs)
 
-                    noise_out_err[p] = calc_error(true_outputs, noise_outputs, outc)
-                    #print("toterr = ", noise_out_err[p])
-                    print("toterr/d = ", noise_out_err[p]/len(ninputs))
+                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs)
+                    #print("toterr = ", noise_out_errl[i,p])
 
 
                     #exit()
-        print("cont = ", cont)
-        print("nomi = ", nomi)
-        print("ordi = ", ordi)
-
-        """
-        age = inputs[:,p]
-        print("age = ", age)
-        age = age * 2
-        print("age = ", age)
-        print("i:p = ", inputs[:,p])
-        """
-
-
-        if torch.cuda.is_available() == True:
-            inputs = inputs.cuda()
-            outcomes = outcomes.cuda()
-            #print("Using cuda")
-        else:
-            print("Using CPU")
-
-        outputs = net(inputs)
-
-        print(" Outcomes.size = ", outcomes.size())
-        print(" Outcomes = ", outcomes)
-
-        print(" Output.size = ", outputs.size())
-        print(" Output = ", outputs)
-
-        outputs2 = net(inputs)
-
-        print(" Output2.size = ", outputs2.size())
-        print(" Output2 = ", outputs2)
 
         if one_point: #Break after first batch if one_point True
             if i==0:
                 break
+    
+    #print("net_true_errl = ", net_true_errl)
+    #print("noise_in_errl = ", noise_in_errl)
+    #print("noise_out_errl = ", noise_out_errl)
+
+    if one_point:
+        avg_net_true_err = net_true_errl[0]
+        avg_noise_in_err = noise_in_errl[0]
+        avg_noise_out_err = noise_out_errl[0]
+    else:
+        avg_net_true_err = np.mean(net_true_errl)
+        avg_noise_in_err = np.zeros(lp)
+        avg_noise_out_err = np.zeros(lp)
+        for r in range(lp):
+            avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
+            avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
+
+    print("avg_net_true_err = ", avg_net_true_err)
+    print("avg_noise_in_err = ", avg_noise_in_err)
+    print("avg_noise_out_err = ", avg_noise_out_err)
+
+    scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
+    print("scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
+
+    in_scaled_avg_noise_out_err = np.add(scaled_avg_noise_out_err, avg_noise_in_err)
+    print("in_scaled_avg_noise_out_err = ", in_scaled_avg_noise_out_err)
 
         
 #temp for debugging
@@ -378,4 +382,4 @@ ts_load = DataLoader(ts_data, batch_size=10, shuffle=True, drop_last=True)
 
 outc = "EQ_IndexTL12"
 save_num = 0
-evaluate_net(eqidxtl12_net(), ts_load, outc, save_num, True)
+evaluate_net(eqidxtl12_net(), ts_load, outc, save_num, False)
