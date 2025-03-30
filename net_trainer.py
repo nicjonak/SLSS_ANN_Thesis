@@ -16,6 +16,15 @@ outcome_to_index = {
         "Recovery": 5
         }
 
+outcome_to_range = {
+        "BackPain": 10,
+        "LegPain": 10,
+        "ODIScore": 100,
+        "ODI4_Final": 2,
+        "EQ_IndexTL12": 1,
+        "Recovery": 1
+        }
+
 #Convert categorical outcomes to One-Hot outcome vectors
 def Log_Convert(outcomes, outc):
     outc_idx = outcome_to_index[outc]
@@ -80,7 +89,7 @@ def calc_cor(outputs, outcomes):
     return total_cor
 
 #Calculate error between net predicted outputs and true outcomes
-def calc_err(outputs, outcomes):
+def calc_err(outputs, outcomes, outcN):
     total_err = 0
     if len(outputs) == len(outcomes):
         for i in range(0,len(outputs)):
@@ -91,7 +100,7 @@ def calc_err(outputs, outcomes):
             #print("outputs[",i,"] = ", outp)
             #print("err[",i,"] = ", abs(outp - outc))
 
-            total_err+= abs(outp - outc) / ((outp + outc)/2)
+            total_err+= abs(outp - outc) / outcome_to_range[outcN]
             
     else:
         print("ERROR: calc_err(): outputs and outcomes different size")
@@ -131,7 +140,7 @@ def validate(net, dataset, criterion, outc):
             conv_outp = convert_outputs(outputs, outc)
             cur_cor = calc_cor(conv_outp, outcomes)
         else:
-            cur_cor = calc_err(outputs, outcomes)
+            cur_cor = calc_err(outputs, outcomes, outc)
 
         total_acc += cur_cor
         total_loss += loss.item()
@@ -334,7 +343,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
                 #print("post conv outputs = ", outputs)
                 cur_cor = calc_cor(conv_outp, outcomes)
             else:
-                cur_cor = calc_err(outputs, outcomes)
+                cur_cor = calc_err(outputs, outcomes, outc)
 
             #print("      cur_cor = ", cur_cor)
             ep_trn_acc += cur_cor

@@ -10,7 +10,7 @@ from test_nets import *
 from net_trainer import *
 from data_visualizer import *
 
-#Update and Fix with nets
+#Update and Fix with nets (This isn't used probably just delete)
 index_to_net = {
         0: backpain_net(),
         1: backpain_net(),
@@ -129,7 +129,7 @@ def hp_search(net, folds, val_per_min, val_per_max, val_per_itr, batch_min, batc
 
     final_list = np.zeros((num_runs, 9))
     #print("final_list = ", final_list)
-    print("final_list.shape = ", final_list.shape)
+    #print("final_list.shape = ", final_list.shape)
 
     print()
 
@@ -476,37 +476,37 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
 
 #Flow will be: call hp_search, use best hp with cross_validate=True, if cv okay use best hp with cross_validate=False, use returned ts_data and saved net for net_analysis
 
-#EQ IndexTL12 testing - G:3/24
+#EQ IndexTL12 testing - G:3/28
 
 batch = 10
 val_per = 0.2
 lr = 0.001
 mntum = 0.8
 nf = 10
-ne = 25
+ne = 30
 outc = "EQ_IndexTL12"
 save_num = 0
 #ts = train(eqidxtl12_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 #test(eqidxtl12_net(), ts, outc, save_num, nf, ne)
 #plt.show()
 
-val_per_min = 0.1
+val_per_min = 0.2
 val_per_max = 0.2
-val_per_itr = 2
-batch_min = 5
-batch_max = 20
+val_per_itr = 1
+batch_min = 2
+batch_max = 32
 batch_itr = 4
-lrn_rate_min = 0.0001 
+lrn_rate_min = 0.001 
 lrn_rate_max = 0.1
-lrn_rate_itr = 5
-mntum_min = 0.6
+lrn_rate_itr = 1
+mntum_min = 0.8
 mntum_max = 0.9
-mntum_itr = 4
-epochs_min = 10
-epochs_max = 50
-epochs_itr = 5
+mntum_itr = 1
+epochs_min = 30
+epochs_max = 30
+epochs_itr = 1
 
-hp_search(eqidxtl12_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
+hp_search(eqidxtl12_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, True)
 
 
 #ODI Score testing
