@@ -378,14 +378,17 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
     print("avg_net_true_err = ", avg_net_true_err)
-    print("avg_noise_in_err = ", avg_noise_in_err)
+    #print("avg_noise_in_err = ", avg_noise_in_err)
     print("avg_noise_out_err = ", avg_noise_out_err)
 
     scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
     print("scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
 
-    in_scaled_avg_noise_out_err = np.add(scaled_avg_noise_out_err, avg_noise_in_err)
-    print("in_scaled_avg_noise_out_err = ", in_scaled_avg_noise_out_err)
+    sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
+    print("sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
+
+    vimp = sub_scaled_avg_noise_out_err * 10
+    print("vimp = ", vimp)
 
     print("--- Finished Evaluation ---")
 
