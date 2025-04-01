@@ -19,51 +19,6 @@ class SLSSDataset(Dataset):
         sample = {'predictors': pred, 'outcomes': outc}
         return sample
 
-"""
-#OLD CODE PRESERVED
-#load_data function, inputs test split percentage, outputs randomly split train/val and test datasets
-def load_data(ts_per):
-    xls_file = '../CSORN_Edit.xls' #Specify path to CSORN excel file
-    
-    #df = pd.read_excel(xls_file)
-    #print("df[0] = ", df.iloc[0])
-    
-    data_set = SLSSDataset(xls_file) #Read CSORN data into dataset
-    
-    #print("Dataset[0] = ", data_set[0])
-    
-    #Specify data splits
-    splits = len(data_set)
-    ts_split = int(splits * ts_per)
-    tv_split = splits - ts_split
-
-    print("Total Data: ",splits)
-    print("Train/Val Data: ",tv_split)
-    print("Test Data: ",ts_split)
-
-    #Split data and return splits
-    if (ts_per == 0 or ts_per == 0.0):
-        
-        #tv_load = DataLoader(data_set, batch_size=batch, shuffle=True)
-        #return tv_load
-        
-        return data_set
-    else:
-        tv_data, ts_data = torch.utils.data.random_split(data_set, [tv_split, ts_split])
-        
-        #ret = torch.utils.data.random_split(data_set, [tv_split, ts_split])
-        #print("ret = ", ret)
-        #print("ret[0] = ", ret[0])
-        #comb = torch.utils.data.ConcatDataset(ret)
-        #print("comb = ", comb)
-        
-        
-        #tv_load = DataLoader(tv_data, batch_size=batch, shuffle=True)
-        #ts_load = DataLoader(ts_data, batch_size=batch, shuffle=True)
-        #return tv_load, ts_load
-        
-        return tv_data, ts_data
-"""
 
 def load_data():
     xls_file = '../CSORN_Edit.xls' #Specify path to CSORN excel file
@@ -83,16 +38,7 @@ def load_data():
     
     return data_set
 
-
-
-
-
-
-
-
-
-
-
+#Below is debuggig/test/etc code
 
 """
 #batchs = 10

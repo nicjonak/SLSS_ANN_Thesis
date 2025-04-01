@@ -13,14 +13,25 @@ outcome_to_index = {
         "ODIScore": 2,
         "ODI4_Final": 3,
         "EQ_IndexTL12": 4,
-        "Recovery": 5
+        "Recovery": 5,
+        "Full": 6
+        }
+
+index_to_outcome = {
+        0: "BackPain",
+        1: "LegPain",
+        2: "ODIScore",
+        3: "ODI4_Final",
+        4: "EQ_IndexTL12",
+        5: "Recovery",
+        6: "Full"
         }
 
 outcome_to_range = {
         "BackPain": 10,
         "LegPain": 10,
         "ODIScore": 100,
-        "ODI4_Final": 1,
+        "ODI4_Final": 2,
         "EQ_IndexTL12": 1,
         "Recovery": 1
         }
@@ -108,6 +119,36 @@ def calc_err(outputs, outcomes, outcN):
     #print("total_err = ", total_err)
     return total_err
 
+
+
+
+#Calculate cor/error for Full net/outcomes
+def calc_corerr(outputs, outcomes, outcN):
+    total_err = 0
+    if len(outputs) == len(outcomes):
+        for i in range(0,len(outputs)):
+            temp_err = 0.0
+            for j in range(0,len(outputs[i])):
+                outp = outputs[i,j].item()
+                outc = outcomes[i,j].item()
+            #print("i =", i)
+            #print("outcomes[",i,"] = ", outc)
+            #print("outputs[",i,"] = ", outp)
+            #print("err[",i,"] = ", abs(outp - outc))
+
+                temp_err+= abs(outp - outc) / outcome_to_range[index_to_outcome[j]]
+            total_err+= temp_err/6
+            
+    else:
+        print("ERROR: calc_corerr(): outputs and outcomes different size")
+        return 0.0
+    #print("total_err = ", total_err)
+    return total_err
+
+
+
+
+
 #Validate net over given dataset with given criterion
 def validate(net, dataset, criterion, outc):
     outc_idx = outcome_to_index[outc]
@@ -117,9 +158,10 @@ def validate(net, dataset, criterion, outc):
     for i, data in enumerate(dataset):
         inputs = data['predictors']
         outcomes = data['outcomes']
-        outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-        if (outc_idx == 3) or (outc_idx == 5):
-            outcomes = Log_Convert(outcomes, outc)
+        if outc_idx != 6:
+            outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
+            if (outc_idx == 3) or (outc_idx == 5):
+                outcomes = Log_Convert(outcomes, outc)
 
         #print(" Inputs.size = ", inputs.size())
         #print(" Inputs = ", inputs)
@@ -139,6 +181,8 @@ def validate(net, dataset, criterion, outc):
         if (outc_idx == 3) or (outc_idx == 5):
             conv_outp = convert_outputs(outputs, outc)
             cur_cor = calc_cor(conv_outp, outcomes)
+        elif (outc_idx == 6):
+                cur_cor = calc_corerr(outputs, outcomes, outc)
         else:
             cur_cor = calc_err(outputs, outcomes, outc)
 
@@ -154,131 +198,6 @@ def validate(net, dataset, criterion, outc):
     loss = float(total_loss) / (i+1)
     return acc, loss
 
-"""
-#OLD CODE PRESERVED
-#Train net using given hyperparameters and data, save final net, acc, and loss into .csv files
-def trainNet(tv_data, net, batch, lrn_rate, mntum, folds, epochs, outc, save_num):
-    path = "../"+outc+"Net"+str(save_num)
-    print("path = ", path)
-    outc_idx = outcome_to_index[outc]
-    print("outc = ", outc)
-    print("outc_idx = ", outc_idx)
-    if (outc_idx == 3) or (outc_idx == 5):
-        criterion = nn.CrossEntropyLoss()
-        #criterion = nn.BCELoss()
-    else:
-        criterion = nn.MSELoss()
-
-    #optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
-    optimizer = optim.Adam(net.parameters(), lr=lrn_rate)
-
-    ep_trn_acc = np.zeros(epochs)
-    ep_trn_loss = np.zeros(epochs)
-    ep_val_acc = np.zeros(epochs)
-    ep_val_loss = np.zeros(epochs)
-
-    trn_acc = np.zeros((epochs, folds))
-    trn_loss = np.zeros((epochs, folds))
-    val_acc = np.zeros((epochs, folds))
-    val_loss = np.zeros((epochs, folds))
-
-    for epoch in range(epochs):
-        #trn_acc = np.zeros(folds)
-        #trn_loss = np.zeros(folds)
-        #val_acc = np.zeros(folds)
-        #val_loss = np.zeros(folds)
-
-        #for epoch in range(epochs)
-        splits = [1/folds] * folds
-        tv_folds = torch.utils.data.random_split(tv_data, splits)
-        print("Epoch: ",epoch + 1)
-        for fold in range(folds):
-            val_data = tv_folds[fold]
-            trn_list = tv_folds.copy()
-            trn_list.pop(fold)
-            trn_data = torch.utils.data.ConcatDataset(trn_list)
-
-            #print("len val_data = ", len(val_data))
-            #print("len trn_data = ", len(trn_data))
-
-            val_load = DataLoader(val_data, batch_size=batch, shuffle=True, drop_last=True)
-            trn_load = DataLoader(trn_data, batch_size=batch, shuffle=True, drop_last=True)
-
-            fold_trn_loss = 0.0
-            fold_trn_acc = 0.0
-            fold_data = 0
-
-            for i, data in enumerate(trn_load):
-                inputs = data['predictors']
-                outcomes = data['outcomes']
-                #outc_idx = outcome_to_index[outc]
-                outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-                if (outc_idx == 3) or (outc_idx == 5):
-                    outcomes = Log_Convert(outcomes, outc)
-                #print("    --- Start ---")
-                #print(" Outcomes.size = ", outcomes.size())
-                #print(" Outcomes = ", outcomes)
-                #print(" Outcomes[BackPain] = ", outcomes[:,0])
-                #return
-
-                if torch.cuda.is_available() == True:
-                    inputs = inputs.cuda()
-                    outcomes = outcomes.cuda()
-                    #print("Using cuda")
-                else:
-                    print("Using CPU")
-
-                optimizer.zero_grad()
-                outputs = net(inputs)
-                #print(" Output.size = ", outputs.size())
-                #print(" Output = ", outputs)
-                #print(" -- Gets Here -- ")
-                loss = criterion(outputs, outcomes)
-                loss.backward()
-                optimizer.step()
-                
-                #print("  loss.item() = ",loss.item())
-                if (outc_idx == 3) or (outc_idx == 5):
-                    conv_outp = convert_outputs(outputs, outc)
-                    #print("post conv outputs = ", outputs)
-                    cur_cor = calc_cor(conv_outp, outcomes)
-                elif (outc_idx == 4): #if using EQ IdxTL12 calculate error of output rather than number of correct predictions for accuracy
-                    cur_cor = calc_err(outputs, outcomes)
-                else:
-                    round_outp = round_outputs(outputs, outc)
-                    #print("post round outputs = ", outputs)
-                    cur_cor = calc_cor(round_outp, outcomes)
-                #print("      cur_cor = ", cur_cor)
-                fold_trn_acc += cur_cor
-                #print("      fold_train_acc = ", fold_trn_acc)
-                #print("    --- End ---")
-                fold_trn_loss += loss.item()
-                fold_data += len(outcomes)
-            if (outc_idx == 4): #if using EQ IdxTL12 use error of output to calculate accuracy
-                trn_acc[epoch, fold] = 1 - (float(fold_trn_acc) / fold_data)
-            else:
-                trn_acc[epoch, fold] = float(fold_trn_acc) / fold_data
-            trn_loss[epoch, fold] = float(fold_trn_loss) / (i+1)
-            val_acc[epoch, fold], val_loss[epoch, fold] = validate(net, val_load, criterion, outc)
-            print(("    Fold {}: Train Acc: {:.5f}, Train Loss: {:.5f} | "+"Val Acc: {:.5f}, Val Loss: {:.5f}").format(fold + 1, trn_acc[epoch, fold], trn_loss[epoch, fold], val_acc[epoch, fold], val_loss[epoch, fold]))
-        ep_trn_acc[epoch] = np.mean(trn_acc[epoch])
-        ep_trn_loss[epoch] = np.mean(trn_loss[epoch])
-        ep_val_acc[epoch] = np.mean(val_acc[epoch])
-        ep_val_loss[epoch] = np.mean(val_loss[epoch])
-        print(("  Epoch {}: Avg Train Acc: {:.5f}, Avg Train Loss: {:.5f} | "+"Avg Val Acc: {:.5f}, Avg Val Loss: {:.5f}").format(epoch + 1, ep_trn_acc[epoch], ep_trn_loss[epoch], ep_val_acc[epoch], ep_val_loss[epoch]))
-    
-    torch.save(net.state_dict(), path)
-    np.savetxt("{}_train_acc.csv".format(path), trn_acc)
-    np.savetxt("{}_train_loss.csv".format(path), trn_loss)
-    np.savetxt("{}_val_acc.csv".format(path), val_acc)
-    np.savetxt("{}_val_loss.csv".format(path), val_loss)
-
-    np.savetxt("{}_ep_train_acc.csv".format(path), ep_trn_acc)
-    np.savetxt("{}_ep_train_loss.csv".format(path), ep_trn_loss)
-    np.savetxt("{}_ep_val_acc.csv".format(path), ep_val_acc)
-    np.savetxt("{}_ep_val_loss.csv".format(path), ep_val_loss)
-"""
-
 
 def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num, Trace):
     path = "../"+outc+"Net"+str(save_num)
@@ -290,7 +209,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
     if (outc_idx == 3) or (outc_idx == 5):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
-    elif (outc_idx == 2):
+    elif (outc_idx == 2): # or (outc_idx == 1) or (outc_idx == 0):
         criterion = nn.L1Loss()
     else:
         criterion = nn.MSELoss()
@@ -314,9 +233,12 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
             inputs = data['predictors']
             outcomes = data['outcomes']
             #outc_idx = outcome_to_index[outc]
-            outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-            if (outc_idx == 3) or (outc_idx == 5):
-                outcomes = Log_Convert(outcomes, outc)
+            if outc_idx != 6:
+                outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
+                if (outc_idx == 3) or (outc_idx == 5):
+                    outcomes = Log_Convert(outcomes, outc)
+            else:
+                outcomes = outcomes.to(torch.float32)
             #print("    --- Start ---")
             #print(" Outcomes.size = ", outcomes.size())
             #print(" Outcomes = ", outcomes)
@@ -344,6 +266,8 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
                 conv_outp = convert_outputs(outputs, outc)
                 #print("post conv outputs = ", outputs)
                 cur_cor = calc_cor(conv_outp, outcomes)
+            elif (outc_idx == 6):
+                cur_cor = calc_corerr(outputs, outcomes, outc)
             else:
                 cur_cor = calc_err(outputs, outcomes, outc)
 

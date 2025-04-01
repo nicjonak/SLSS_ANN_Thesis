@@ -3,9 +3,9 @@
 
 import torch
 from net_trainer import *
-from data_loader import * #temp for debugging
-from test_nets import * #temp for debugging
-import random #temp for debugging
+from data_loader import *
+#from test_nets import * #temp for debugging
+#import random #temp for debugging
 
 index_to_predictor = {
         0: "Age",
@@ -196,6 +196,30 @@ def calc_error(true, noise, outc, outcomes):
     #print("total_err = ", total_err)
     return total_err
 
+def calc_corerror(true, noise, outc, outcomes):
+    outc_idx = outcome_to_index[outc]
+    total_err = 0
+    if len(true) == len(noise):
+        for i in range(0,len(true)):
+            temp_err = 0.0
+            for j in range(0,len(true[i])):
+            
+                outn = noise[i,j].item()
+                outt = true[i,j].item()
+            #print("outt[",i,"] = ", outt)
+            #print("outn[",i,"] = ", outn)
+            #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
+            #print("-")
+
+                temp_err+= abs(outt - outn) / outcome_to_range[index_to_outcome[j]]
+            total_err+= temp_err/6
+            
+    else:
+        print("ERROR: calc_err(): outputs and outcomes different size")
+        return 0.0
+    #print("total_err = ", total_err)
+    return total_err
+
 
 
 def evaluate_net(net, dataset, outc, save_num, one_point):
@@ -229,9 +253,12 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     for i, data in enumerate(dataset):
         inputs = data['predictors']
         outcomes = data['outcomes']
-        outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-        if (outc_idx == 3):
-            outcomes = bi_Convert(outcomes)
+        if outc_idx != 6:
+            outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
+            if (outc_idx == 3):
+                outcomes = bi_Convert(outcomes)
+        else:
+            outcomes = outcomes.to(torch.float32)
 
         #print(" outcomes = ", outcomes)
 
@@ -252,7 +279,10 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
         #print(" true_outputs = ", true_outputs)
         for q in range(100):
             temp_outputs = net(inputs)
-            net_true_errl[i] += calc_error(true_outputs, temp_outputs, outc, outcomes) / len(inputs)
+            if outc_idx == 6:
+                net_true_errl[i] += calc_corerror(true_outputs, temp_outputs, outc, outcomes) / len(inputs)
+            else:
+                net_true_errl[i] += calc_error(true_outputs, temp_outputs, outc, outcomes) / len(inputs)
         net_true_errl[i] = net_true_errl[i] / 100
 
         #print("net_true_errl[i] = ", net_true_errl[i])
@@ -286,8 +316,10 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                 noise_outputs = net(ninputs)
                 #print(" noise_outputs = ", noise_outputs)
                 #print(" true_outputs = ", true_outputs)
-
-                noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                if outc_idx == 6:
+                    noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                else:
+                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
                 #print("toterr = ", noise_out_errl[i,p])
 
 
@@ -314,8 +346,10 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
 
                     noise_in_errl[i,p] = 0.0 #calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
                     #print("totinerr = ", noise_in_errl[i,p])
-
-                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                    if outc_idx == 6:
+                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                    else:
+                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
                     #print("toterr = ", noise_out_errl[i,p])
 
                     #exit()
@@ -350,8 +384,10 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                     noise_outputs = net(ninputs)
                     #print(" noise_outputs = ", noise_outputs)
                     #print(" true_outputs = ", true_outputs)
-
-                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                    if outc_idx == 6:
+                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                    else:
+                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
                     #print("toterr = ", noise_out_errl[i,p])
 
 
@@ -399,7 +435,7 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
 
         
 #temp for debugging
-
+"""
 folds = 10
 tvs_data = load_data()
 splits = [1/folds] * folds
@@ -421,3 +457,4 @@ evaluate_net(recovery_net(), ts_load, outc, save_num, False)
 outc = "ODIScore"
 save_num = 0
 evaluate_net(odiscore_net(), ts_load, outc, save_num, False)
+"""
