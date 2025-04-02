@@ -296,7 +296,7 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
     if (outc_idx == 3) or (outc_idx == 5):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
-    elif (outc_idx == 2): #or (outc_idx == 1) or (outc_idx == 0):
+    elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
         criterion = nn.L1Loss()
     else:
         criterion = nn.MSELoss()
@@ -387,10 +387,10 @@ epochs_itr = 1
 
 batch = 10
 val_per = 0.2
-lr = 0.0001
+lr = 0.001
 mntum = 0.4
 nf = 10
-ne = 600
+ne = 100
 outc = "ODIScore"
 save_num = 0
 
@@ -431,7 +431,7 @@ save_num = 0
 
 #hp_search(recovery_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(recovery_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
+ts = train(recovery_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 plt.show()
 
 #evaluate_net(recovery_net(), ts, outc, save_num, False)
@@ -464,10 +464,10 @@ ne = 100
 outc = "BackPain"
 save_num = 1
 
-hp_search(backpain_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
+#hp_search(backpain_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-#ts = train(backpain_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
-#plt.show()
+ts = train(backpain_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+plt.show()
 """
 
 
@@ -500,16 +500,16 @@ epochs_itr = 1
 
 batch = 10
 val_per = 0.2
-lr = 0.0001
-mntum = 0.9
+lr = 0.001 #0.001
+mntum = 0.7 #0.75
 nf = 10
-ne = 30
+ne = 125
 outc = "Full"
 save_num = 0
 
 #hp_search(Full_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(Full_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
+ts = train(Full_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 plt.show()
 
 evaluate_net(Full_net(), ts, outc, save_num, False)

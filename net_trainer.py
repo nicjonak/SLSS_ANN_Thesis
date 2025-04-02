@@ -131,6 +131,10 @@ def calc_corerr(outputs, outcomes, outcN):
             for j in range(0,len(outputs[i])):
                 outp = outputs[i,j].item()
                 outc = outcomes[i,j].item()
+                if j == 3:
+                    outp = np.round(outp) * 2
+                elif j == 5:
+                    outp = np.round(outp)
             #print("i =", i)
             #print("outcomes[",i,"] = ", outc)
             #print("outputs[",i,"] = ", outp)
@@ -209,7 +213,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
     if (outc_idx == 3) or (outc_idx == 5):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
-    elif (outc_idx == 2): # or (outc_idx == 1) or (outc_idx == 0):
+    elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
         criterion = nn.L1Loss()
     else:
         criterion = nn.MSELoss()

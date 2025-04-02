@@ -334,17 +334,33 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
 
                     #print("in = ", ninputs[:,p])
                     for l in range(len(ninputs)):
+                        noise = torch.randn(1)
+                        #noiset = noise * index_to_std[p]
+                        if torch.cuda.is_available():
+                            #noiset = noiset.cuda()
+                            noise = noise.cuda()
+                        #print("noise = ", noise)
+                        #print("noise * std = ", noiseb)
+                        #print("noise * tot_std = ", noiset)
+                        #print("ninputs[k,p] = ", ninputs[k,p])
+                        ninputs[l,p] = ninputs[l,p] + noise
+                        #print("ninputs[k,p]n = ", ninputs[k,p])
+                        ninputs[l,p] = torch.round(ninputs[l,p])
+                        ninputs[l,p] = max(ninputs[l,p], 0)
+                        ninputs[l,p] = min(ninputs[l,p], predictor_to_range[index_to_predictor[p]])
+                        """
                         if ninputs[l,p] == 0:
                             ninputs[l,p] = 1
                         else:
                             ninputs[l,p] = 0
+                        """
                     #print("in = ", ninputs[:,p])
 
                     noise_outputs = net(ninputs)
                     #print(" noise_outputs = ", noise_outputs)
                     #print(" true_outputs = ", true_outputs)
 
-                    noise_in_errl[i,p] = 0.0 #calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                    noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
                     #print("totinerr = ", noise_in_errl[i,p])
                     if outc_idx == 6:
                         noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
@@ -423,9 +439,18 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
     #print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
 
-    vimp = sub_scaled_avg_noise_out_err * 10
-    print(" vimp = ", vimp)
+    in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
+    #print(" in_sub_scaled_avg_noise_out_err = ", in_sub_scaled_avg_noise_out_err)
 
+    vimp = in_sub_scaled_avg_noise_out_err * 10
+    #print(" vimp = ", vimp)
+
+    print()
+    for g in range(lp):
+        if (vimp[g] >= 0) and (vimp[g] < 1):
+            print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
+    
+    #print()
     for f in range(lp):
         if vimp[f] >= 1:
             print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[f], vimp[f]))
@@ -445,7 +470,8 @@ print("Test Fold: ", fold)
 
 ts_data = tvs_folds[fold]
 ts_load = DataLoader(ts_data, batch_size=10, shuffle=True, drop_last=True)
-
+"""
+"""
 outc = "EQ_IndexTL12"
 save_num = 0
 evaluate_net(eqidxtl12_net(), ts_load, outc, save_num, False)
@@ -457,4 +483,9 @@ evaluate_net(recovery_net(), ts_load, outc, save_num, False)
 outc = "ODIScore"
 save_num = 0
 evaluate_net(odiscore_net(), ts_load, outc, save_num, False)
+"""
+"""
+outc = "Full"
+save_num = 0
+evaluate_net(Full_net(), ts_load, outc, save_num, False)
 """

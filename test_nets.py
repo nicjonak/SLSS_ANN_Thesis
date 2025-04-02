@@ -942,7 +942,7 @@ class odiscore_net(nn.Module):
 
         self.catdo_layer = nn.Dropout(p=0.05)
         self.conbn_layer = nn.BatchNorm1d(7)
-        
+        """
         self.smplReg = nn.Sequential(
                 nn.Linear(36, 64),
                 nn.BatchNorm1d(64),
@@ -963,8 +963,8 @@ class odiscore_net(nn.Module):
                 nn.Linear(16, 1),
                 nn.ReLU()
                 )
-        
         """
+        
         self.smplReg = nn.Sequential(
                 nn.Linear(36, 128),
                 nn.BatchNorm1d(128),
@@ -985,7 +985,7 @@ class odiscore_net(nn.Module):
                 nn.Linear(16, 1),
                 nn.ReLU()
                 )
-        """
+        
         
 
     def forward(self, x):
@@ -1231,7 +1231,7 @@ class Full_net(nn.Module):
         self.chiro_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
         self.physio_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
 
-        self.catdo_layer = nn.Dropout(p=0.05)
+        #self.catdo_layer = nn.Dropout(p=0.05)
         self.conbn_layer = nn.BatchNorm1d(7)
         """
         self.smplReg = nn.Sequential(
@@ -1255,76 +1255,308 @@ class Full_net(nn.Module):
                 nn.ReLU()
                 )
         """
-        
+
+        """
         self.smplReg = nn.Sequential(
-                nn.Linear(36, 256),
-                nn.BatchNorm1d(256),
-                nn.ReLU(),
-                nn.Dropout(p=0.0001),
-                nn.Linear(256, 512),
+                nn.Linear(36, 512),
                 nn.BatchNorm1d(512),
                 nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(512, 1024),
+                nn.BatchNorm1d(1024),
+                nn.ReLU(),
                 nn.Dropout(p=0.0005),
-                nn.Linear(512, 128),
-                nn.BatchNorm1d(128),
+                nn.Linear(1024, 256),
+                nn.BatchNorm1d(256),
                 nn.ReLU(),
                 )
+        """
+        self.smplReg = nn.Sequential(
+                #nn.Linear(36, 36),
+                #nn.BatchNorm1d(36),
+                #nn.ReLU(),
+                nn.Linear(36, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                #nn.Linear(256, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001)
+                )
 
-            
+        """
         self.BackPainReg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-
+        """
+        self.BackPainReg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(256, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                nn.Linear(64, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(64, 10),
+                nn.BatchNorm1d(10),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(10, 1),
+                nn.ReLU()
+                )
+        """
+        nn.Linear(36, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0001),
+        nn.Linear(128, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0005),
+        nn.Linear(128, 64),
+        nn.BatchNorm1d(64),
+        nn.ReLU(),
+        #nn.Dropout(p=0.001),
+        nn.Linear(64, 1),
+        nn.ReLU()
+        )
+        """
+        """
         self.LegPainReg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-
+        """
+        self.LegPainReg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(256, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                nn.Linear(64, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(64, 10),
+                nn.BatchNorm1d(10),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(10, 1),
+                nn.ReLU()
+                )
+        """
+        nn.Linear(36, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0001),
+        nn.Linear(128, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0005),
+        nn.Linear(128, 64),
+        nn.BatchNorm1d(64),
+        nn.ReLU(),
+        #nn.Dropout(p=0.001),
+        nn.Linear(64, 1),
+        nn.ReLU()
+        )
+        """
+        """
         self.ODIScoreReg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-
+        """
+        self.ODIScoreReg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(64, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                nn.Linear(64, 128),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(128, 32),
+                nn.BatchNorm1d(32),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(32, 1),
+                nn.ReLU()
+                )
+        """
         self.ODI4FinalReg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-
+        """
+        self.ODI4FinalReg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(256, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                #nn.Linear(256, 128),
+                #nn.BatchNorm1d(128),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(128, 64),
+                #nn.BatchNorm1d(64),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(64, 32),
+                nn.BatchNorm1d(32),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(32, 16),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(16, 1),
+                nn.Sigmoid()
+                )
+        """
+        #nn.Linear(36, 64),
+        #nn.BatchNorm1d(64),
+        #nn.ReLU(),
+        #nn.Dropout(p=0.0001),
+        nn.Linear(36, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0005),
+        nn.Linear(128, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.001),
+        nn.Linear(128, 64),
+        nn.BatchNorm1d(64),
+        nn.ReLU(),
+        #nn.Dropout(p=0.01),
+        nn.Linear(64, 1),
+        nn.Sigmoid()
+        )
+        """
+        """
         self.EQIndexTL12Reg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-
+        """
+        self.EQIndexTL12Reg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(64, 128),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Dropout(p=0.001),
+                nn.Linear(128, 32),
+                nn.BatchNorm1d(32),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(32, 16),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(16, 1),
+                nn.ReLU()
+                )
+        """
         self.RecoveryReg = nn.Sequential(
-            nn.Linear(128, 32),
-            nn.BatchNorm1d(32),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),
             nn.Dropout(p=0.01),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
             nn.ReLU()
             )
-        
+        """
+        self.RecoveryReg = nn.Sequential(
+                #nn.Linear(36, 256),
+                #nn.BatchNorm1d(256),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(256, 512),
+                #nn.BatchNorm1d(512),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                #nn.Linear(256, 128),
+                #nn.BatchNorm1d(128),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                #nn.Linear(128, 64),
+                #nn.BatchNorm1d(64),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(64, 32),
+                nn.BatchNorm1d(32),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(32, 16),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(16, 1),
+                nn.Sigmoid()
+                )
+        """
+        #nn.Linear(36, 64),
+        #nn.BatchNorm1d(64),
+        #nn.ReLU(),
+        #nn.Dropout(p=0.0001),
+        nn.Linear(36, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.0005),
+        nn.Linear(128, 128),
+        nn.BatchNorm1d(128),
+        nn.ReLU(),
+        #nn.Dropout(p=0.001),
+        nn.Linear(128, 64),
+        nn.BatchNorm1d(64),
+        nn.ReLU(),
+        #nn.Dropout(p=0.01),
+        nn.Linear(64, 1),
+        nn.Sigmoid()
+        )
+        """
         
 
     def forward(self, x):
@@ -1489,7 +1721,7 @@ class Full_net(nn.Module):
         #print("xcatemb.size = ", xcatemb.size())
         #print(" xcatemb = ", xcatemb)
 
-        xcatemb = self.catdo_layer(xcatemb)
+        #xcatemb = self.catdo_layer(xcatemb)
         #print("xcatemb.size = ", xcatemb.size())
         #print(" xcatemb = ", xcatemb)
 
@@ -1516,8 +1748,10 @@ class Full_net(nn.Module):
         #outODIScore = torch.mul(outODIScore, 100)
         outODI4Final = self.ODI4FinalReg(output)
         #outODI4Final = torch.mul(outODI4Final, 2)
+        #outODI4Final = torch.round(outODI4Final)
         outEQIndexTL12 = self.EQIndexTL12Reg(output)
         outRecovery = self.RecoveryReg(output)
+        #outRecovery = torch.round(outRecovery)
 
         #output = torch.mul(output, 100)
         #output = torch.round(output)
