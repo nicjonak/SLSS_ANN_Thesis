@@ -1178,28 +1178,11 @@ class odiscore_net(nn.Module):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#Full net, For predicting All Outcomes
-class Full_net(nn.Module):
+#ODI4_Final net, For predicting Outcome ODI4_Final
+class odi4_net(nn.Module):
     def __init__(self):
-        super(Full_net, self).__init__()
-        self.name = "Full_net"
+        super(odi4_net, self).__init__()
+        self.name = "odi4_net"
 
         self.sx_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
         self.sympdurat_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
@@ -1231,8 +1214,319 @@ class Full_net(nn.Module):
         self.chiro_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
         self.physio_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1))
 
-        #self.catdo_layer = nn.Dropout(p=0.05)
+        self.catdo_layer = nn.Dropout(p=0.05)
         self.conbn_layer = nn.BatchNorm1d(7)
+
+        """
+        self.smplReg = nn.Sequential(
+                nn.Linear(36, 96),
+                nn.BatchNorm1d(96),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(96, 48),
+                nn.BatchNorm1d(48),
+                nn.ReLU(),
+                nn.Dropout(p=0.0005),
+                nn.Linear(48, 1),
+                nn.Sigmoid()
+                )
+        """
+
+
+
+        self.smplReg = nn.Sequential(
+                nn.Linear(36, 128),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(128, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Dropout(p=0.0005),
+                nn.Linear(256, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.001),
+                nn.Linear(64, 16),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(16, 1),
+                nn.ReLU()
+                )
+
+        """
+        self.smplReg = nn.Sequential(
+                nn.Linear(36, 96),
+                nn.BatchNorm1d(96),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(96, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(p=0.0005),
+                nn.Linear(64, 32),
+                nn.BatchNorm1d(32),
+                nn.ReLU(),
+                nn.Dropout(p=0.001),
+                nn.Linear(32, 16),
+                nn.BatchNorm1d(16),
+                nn.ReLU(),
+                nn.Dropout(p=0.01),
+                nn.Linear(16, 1),
+                nn.Sigmoid()
+                )
+        """
+                
+        
+
+    def forward(self, x):
+        #print("x",x)
+
+        xcon = x[:,:7].to(torch.float32)
+        #print("xcon", xcon)
+        #print(" xcon.size = ", xcon.size())
+
+        xcat = x[:,7:]
+        #print("xcat", xcat)
+        #print(" xcat.size = ", xcat.size())
+
+        xsx = x[:,7].unsqueeze(1).to(torch.int64)
+        #print(" xsx = ", xsx)
+        xsx = self.sx_embed(xsx).squeeze(2)
+        #print(" after embed xsx.size = ", xsx.size())
+        #print(" after embed xsx = ", xsx)
+        xsympdurat = x[:,8].unsqueeze(1).to(torch.int64)
+        #print(" xsympdurat = ", xsympdurat)
+        xsympdurat = self.sympdurat_embed(xsympdurat).squeeze(2)
+        #print(" after embed xsympdurat.size = ", xsympdurat.size())
+        #print(" after embed xsympdurat = ", xsympdurat)
+        xmarried = x[:,9].unsqueeze(1).to(torch.int64)
+        #print(" xmarried = ", xmarried)
+        xmarried = self.married_embed(xmarried).squeeze(2)
+        #print(" after embed xmarried.size = ", xmarried.size())
+        #print(" after embed xmarried = ", xmarried)
+        xeducation = x[:,10].unsqueeze(1).to(torch.int64)
+        #print(" xeducation = ", xeducation)
+        xeducation = self.education_embed(xeducation).squeeze(2)
+        #print(" after embed xeducation.size = ", xeducation.size())
+        #print(" after embed xeducation = ", xeducation)
+        xsmoke = x[:,11].unsqueeze(1).to(torch.int64)
+        #print(" xsmoke = ", xsmoke)
+        xsmoke = self.smoke_embed(xsmoke).squeeze(2)
+        #print(" after embed xsmoke.size = ", xsmoke.size())
+        #print(" after embed xsmoke = ", xsmoke)
+        xexercise = x[:,12].unsqueeze(1).to(torch.int64)
+        #print(" xexercise = ", xexercise)
+        xexercise = self.exercise_embed(xexercise).squeeze(2)
+        #print(" after embed xexercise.size = ", xexercise.size())
+        #print(" after embed xexercise = ", xexercise)
+        xworkstat = x[:,13].unsqueeze(1).to(torch.int64)
+        #print(" xworkstat = ", xworkstat)
+        xworkstat = self.workstat_embed(xworkstat).squeeze(2)
+        #print(" after embed xworkstat.size = ", xworkstat.size())
+        #print(" after embed xworkstat = ", xworkstat)
+        xchiroN = x[:,14].unsqueeze(1).to(torch.int64)
+        #print(" xchiroN = ", xchiroN)
+        xchiroN = self.chiroN_embed(xchiroN).squeeze(2)
+        #print(" after embed xchiroN.size = ", xchiroN.size())
+        #print(" after embed xchiroN = ", xchiroN)
+        xphysioN = x[:,15].unsqueeze(1).to(torch.int64)
+        #print(" xphysioN = ", xphysioN)
+        xphysioN = self.physioN_embed(xphysioN).squeeze(2)
+        #print(" after embed xphysioN.size = ", xphysioN.size())
+        #print(" after embed xphysioN = ", xphysioN)
+        xtrainer = x[:,16].unsqueeze(1).to(torch.int64)
+        #print(" xtrainer = ", xtrainer)
+        xtrainer = self.trainer_embed(xtrainer).squeeze(2)
+        #print(" after embed xtrainer.size = ", xtrainer.size())
+        #print(" after embed xtrainer = ", xtrainer)
+        xpainmed = x[:,17].unsqueeze(1).to(torch.int64)
+        #print(" xpainmed = ", xpainmed)
+        xpainmed = self.painmed_embed(xpainmed).squeeze(2)
+        #print(" after embed xpainmed.size = ", xpainmed.size())
+        #print(" after embed xpainmed = ", xpainmed)
+        xinflammatory = x[:,18].unsqueeze(1).to(torch.int64)
+        #print(" xinflammatory = ", xinflammatory)
+        xinflammatory = self.inflammatory_embed(xinflammatory).squeeze(2)
+        #print(" after embed xinflammatory.size = ", xinflammatory.size())
+        #print(" after embed xinflammatory = ", xinflammatory)
+        xmusclerelax = x[:,19].unsqueeze(1).to(torch.int64)
+        #print(" xmusclerelax = ", xmusclerelax)
+        xmusclerelax = self.musclerelax_embed(xmusclerelax).squeeze(2)
+        #print(" after embed xmusclerelax.size = ", xmusclerelax.size())
+        #print(" after embed xmusclerelax = ", xmusclerelax)
+        xECbackpain = x[:,20].unsqueeze(1).to(torch.int64)
+        #print(" xECbackpain = ", xECbackpain)
+        xECbackpain = self.ECbackpain_embed(xECbackpain).squeeze(2)
+        #print(" after embed xECbackpain.size = ", xECbackpain.size())
+        #print(" after embed xECbackpain = ", xECbackpain)
+        xEClegpain = x[:,21].unsqueeze(1).to(torch.int64)
+        #print(" xEClegpain = ", xEClegpain)
+        xEClegpain = self.EClegpain_embed(xEClegpain).squeeze(2)
+        #print(" after embed xEClegpain.size = ", xEClegpain.size())
+        #print(" after embed xEClegpain = ", xEClegpain)
+        xECindependence = x[:,22].unsqueeze(1).to(torch.int64)
+        #print(" xECindependence = ", xECindependence)
+        xECindependence = self.ECindependence_embed(xECindependence).squeeze(2)
+        #print(" after embed xECindependence.size = ", xECindependence.size())
+        #print(" after embed xECindependence = ", xECindependence)
+        xECsportsac = x[:,23].unsqueeze(1).to(torch.int64)
+        #print(" xECsportsac = ", xECsportsac)
+        xECsportsac = self.ECsportsac_embed(xECsportsac).squeeze(2)
+        #print(" after embed xECsportsac.size = ", xECsportsac.size())
+        #print(" after embed xECsportsac = ", xECsportsac)
+        xECphyscapac = x[:,24].unsqueeze(1).to(torch.int64)
+        #print(" xECphyscapac = ", xECphyscapac)
+        xECphyscapac = self.ECphyscapac_embed(xECphyscapac).squeeze(2)
+        #print(" after embed xECphyscapac.size = ", xECphyscapac.size())
+        #print(" after embed xECphyscapac = ", xECphyscapac)
+        xECsocial = x[:,25].unsqueeze(1).to(torch.int64)
+        #print(" xECsocial = ", xECsocial)
+        xECsocial = self.ECsocial_embed(xECsocial).squeeze(2)
+        #print(" after embed xECsocial.size = ", xECsocial.size())
+        #print(" after embed xECsocial = ", xECsocial)
+        xECwellbeing = x[:,26].unsqueeze(1).to(torch.int64)
+        #print(" xECwellbeing = ", xECwellbeing)
+        xECwellbeing = self.ECwellbeing_embed(xECwellbeing).squeeze(2)
+        #print(" after embed xECwellbeing.size = ", xECwellbeing.size())
+        #print(" after embed xECwellbeing = ", xECwellbeing)
+        xexpbackpain = x[:,27].unsqueeze(1).to(torch.int64)
+        #print(" xexpbackpain = ", xexpbackpain)
+        xexpbackpain = self.expbackpain_embed(xexpbackpain).squeeze(2)
+        #print(" after embed xexpbackpain.size = ", xexpbackpain.size())
+        #print(" after embed xexpbackpain = ", xexpbackpain)
+        xexplegpain = x[:,28].unsqueeze(1).to(torch.int64)
+        #print(" xexplegpain = ", xexplegpain)
+        xexplegpain = self.explegpain_embed(xexplegpain).squeeze(2)
+        #print(" after embed xexplegpain.size = ", xexplegpain.size())
+        #print(" after embed xexplegpain = ", xexplegpain)
+        xexpindependence = x[:,29].unsqueeze(1).to(torch.int64)
+        #print(" xexpindependence = ", xexpindependence)
+        xexpindependence = self.expindependence_embed(xexpindependence).squeeze(2)
+        #print(" after embed xexpindependence.size = ", xexpindependence.size())
+        #print(" after embed xexpindependence = ", xexpindependence)
+        xexpsports = x[:,30].unsqueeze(1).to(torch.int64)
+        #print(" xexpsports = ", xexpsports)
+        xexpsports = self.expsports_embed(xexpsports).squeeze(2)
+        #print(" after embed xexpsports.size = ", xexpsports.size())
+        #print(" after embed xexpsports = ", xexpsports)
+        xexpphyscap = x[:,31].unsqueeze(1).to(torch.int64)
+        #print(" xexpphyscap = ", xexpphyscap)
+        xexpphyscap = self.expphyscap_embed(xexpphyscap).squeeze(2)
+        #print(" after embed xexpphyscap.size = ", xexpphyscap.size())
+        #print(" after embed xexpphyscap = ", xexpphyscap)
+        xexpsocial = x[:,32].unsqueeze(1).to(torch.int64)
+        #print(" xexpsocial = ", xexpsocial)
+        xexpsocial = self.expsocial_embed(xexpsocial).squeeze(2)
+        #print(" after embed xexpsocial.size = ", xexpsocial.size())
+        #print(" after embed xexpsocial = ", xexpsocial)
+        xexpwellbeing = x[:,33].unsqueeze(1).to(torch.int64)
+        #print(" xexpwellbeing = ", xexpwellbeing)
+        xexpwellbeing = self.expwellbeing_embed(xexpwellbeing).squeeze(2)
+        #print(" after embed xexpwellbeing.size = ", xexpwellbeing.size())
+        #print(" after embed xexpwellbeing = ", xexpwellbeing)
+        xchiro = x[:,34].unsqueeze(1).to(torch.int64)
+        #print(" xchiro = ", xchiro)
+        xchiro = self.chiro_embed(xchiro).squeeze(2)
+        #print(" after embed xchiro.size = ", xchiro.size())
+        #print(" after embed xchiro = ", xchiro)
+        xphysio = x[:,35].unsqueeze(1).to(torch.int64)
+        #print(" xphysio = ", xphysio)
+        xphysio = self.physio_embed(xphysio).squeeze(2)
+        #print(" after embed xphysio.size = ", xphysio.size())
+        #print(" after embed xphysio = ", xphysio)
+        
+
+        xcatemb = torch.cat((xsx, xsympdurat, xmarried, xeducation, xsmoke, xexercise, xworkstat, xchiroN, xphysioN, xtrainer, xpainmed, xinflammatory, xmusclerelax, xECbackpain, xEClegpain, xECindependence, xECsportsac, xECphyscapac, xECsocial, xECwellbeing, xexpbackpain, xexplegpain, xexpindependence, xexpsports, xexpphyscap, xexpsocial, xexpwellbeing, xchiro, xphysio), 1)
+        #print("xcatemb.size = ", xcatemb.size())
+        #print(" xcatemb = ", xcatemb)
+
+        xcatemb = self.catdo_layer(xcatemb)
+        #print("xcatemb.size = ", xcatemb.size())
+        #print(" xcatemb = ", xcatemb)
+
+        #print("pre bn xcon = ", xcon)
+
+        xcon = self.conbn_layer(xcon)
+
+        #print("post bn xcon = ", xcon)
+
+        #print("xcatemb.size = ", xcatemb.size())
+        #print("xcon.size = ", xcon.size())
+
+        xin = torch.cat((xcon,xcatemb), 1)
+
+        #print("xin.size = ", xin.size())
+        #print("xin = ", xin)
+
+        #print("Gets Here pre smplReg")
+
+        output = self.smplReg(xin)
+
+        #print("Gets Here post smplReg")
+
+        #output = torch.mul(output, 100)
+        #output = torch.round(output)
+
+        #print("output.size = ", output.size())
+        #print("output = ", output)
+
+        return output
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Full net, For predicting All Outcomes
+class Full_net(nn.Module):
+    def __init__(self):
+        super(Full_net, self).__init__()
+        self.name = "Full_net"
+
+        self.sx_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.sympdurat_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.married_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.education_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.smoke_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.exercise_embed = nn.Sequential(nn.Embedding(3, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.workstat_embed = nn.Sequential(nn.Embedding(3, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.chiroN_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.physioN_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.trainer_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.painmed_embed = nn.Sequential(nn.Embedding(3, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.inflammatory_embed = nn.Sequential(nn.Embedding(3, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.musclerelax_embed = nn.Sequential(nn.Embedding(3, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECbackpain_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.EClegpain_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECindependence_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECsportsac_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECphyscapac_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECsocial_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.ECwellbeing_embed = nn.Sequential(nn.Embedding(4, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expbackpain_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.explegpain_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expindependence_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expsports_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expphyscap_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expsocial_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.expwellbeing_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.chiro_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+        self.physio_embed = nn.Sequential(nn.Embedding(2, 12), nn.Linear(12, 12), nn.ReLU(), nn.Linear(12,1), nn.ReLU())
+
+        #self.catdo_layer = nn.Dropout(p=0.05)
+        #self.conbn_layer = nn.BatchNorm1d(7)
         """
         self.smplReg = nn.Sequential(
                 nn.Linear(36, 64),
@@ -1275,13 +1569,17 @@ class Full_net(nn.Module):
                 #nn.Linear(36, 36),
                 #nn.BatchNorm1d(36),
                 #nn.ReLU(),
-                nn.Linear(36, 64),
-                nn.BatchNorm1d(64),
+                nn.Linear(36, 96),
+                #nn.BatchNorm1d(64),
                 nn.ReLU(),
-                nn.Dropout(p=0.01),
-                #nn.Linear(256, 512),
+                nn.Dropout(p=0.001),
+                nn.Linear(96, 96),
                 #nn.BatchNorm1d(512),
-                #nn.ReLU(),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(96, 32),
+                #nn.BatchNorm1d(512),
+                nn.ReLU(),
                 #nn.Dropout(p=0.001)
                 )
 
@@ -1304,15 +1602,19 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(512),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.001),
-                nn.Linear(64, 64),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Dropout(p=0.01),
-                nn.Linear(64, 10),
-                nn.BatchNorm1d(10),
-                nn.ReLU(),
+                #nn.Linear(96, 64),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.002),
+                #nn.Linear(64, 32),
+                #nn.BatchNorm1d(32),
+                #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(10, 1),
+                nn.Linear(32, 48),
+                nn.BatchNorm1d(48),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(48, 1),
                 nn.ReLU()
                 )
         """
@@ -1351,15 +1653,19 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(512),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.001),
-                nn.Linear(64, 64),
-                nn.BatchNorm1d(64),
-                nn.ReLU(),
-                nn.Dropout(p=0.01),
-                nn.Linear(64, 10),
-                nn.BatchNorm1d(10),
-                nn.ReLU(),
+                #nn.Linear(96, 64),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.002),
+                #nn.Linear(64, 32),
+                #nn.BatchNorm1d(32),
+                #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(10, 1),
+                nn.Linear(32, 48),
+                nn.BatchNorm1d(48),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(48, 1),
                 nn.ReLU()
                 )
         """
@@ -1398,15 +1704,19 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(512),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.001),
-                nn.Linear(64, 128),
-                nn.BatchNorm1d(128),
-                nn.ReLU(),
-                nn.Dropout(p=0.01),
-                nn.Linear(128, 32),
-                nn.BatchNorm1d(32),
-                nn.ReLU(),
+                #nn.Linear(96, 64),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.002),
+                #nn.Linear(64, 32),
+                #nn.BatchNorm1d(32),
+                #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(32, 1),
+                nn.Linear(32, 48),
+                nn.BatchNorm1d(48),
+                nn.ReLU(),
+                nn.Dropout(p=0.0001),
+                nn.Linear(48, 1),
                 nn.ReLU()
                 )
         """
@@ -1436,16 +1746,20 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(64),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(64, 32),
+                #nn.Linear(96, 48),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.002),
+                #nn.Linear(48, 16),
+                #nn.BatchNorm1d(16),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
+                nn.Linear(32, 32),
                 nn.BatchNorm1d(32),
                 nn.ReLU(),
-                nn.Dropout(p=0.01),
-                nn.Linear(32, 16),
-                nn.BatchNorm1d(16),
-                nn.ReLU(),
-                #nn.Dropout(p=0.01),
-                nn.Linear(16, 1),
-                nn.Sigmoid()
+                nn.Dropout(p=0.0001),
+                nn.Linear(32, 1),
+                nn.ReLU()
                 )
         """
         #nn.Linear(36, 64),
@@ -1483,18 +1797,22 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(256),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(64, 128),
-                nn.BatchNorm1d(128),
-                nn.ReLU(),
-                nn.Dropout(p=0.001),
-                nn.Linear(128, 32),
-                nn.BatchNorm1d(32),
-                nn.ReLU(),
-                nn.Dropout(p=0.01),
+                #nn.Linear(96, 48),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.001),
+                #nn.Linear(48, 32),
+                #nn.BatchNorm1d(32),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.002),
+                #nn.Linear(32, 16),
+                #nn.BatchNorm1d(16),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.01),
                 nn.Linear(32, 16),
                 nn.BatchNorm1d(16),
                 nn.ReLU(),
-                #nn.Dropout(p=0.01),
+                nn.Dropout(p=0.0001),
                 nn.Linear(16, 1),
                 nn.ReLU()
                 )
@@ -1525,15 +1843,15 @@ class Full_net(nn.Module):
                 #nn.BatchNorm1d(64),
                 #nn.ReLU(),
                 #nn.Dropout(p=0.01),
-                nn.Linear(64, 32),
+                #nn.Linear(96, 64),
+                #nn.BatchNorm1d(48),
+                #nn.ReLU(),
+                #nn.Dropout(p=0.003),
+                nn.Linear(32, 32),
                 nn.BatchNorm1d(32),
                 nn.ReLU(),
-                nn.Dropout(p=0.01),
-                nn.Linear(32, 16),
-                nn.BatchNorm1d(16),
-                nn.ReLU(),
-                #nn.Dropout(p=0.01),
-                nn.Linear(16, 1),
+                nn.Dropout(p=0.0001),
+                nn.Linear(32, 1),
                 nn.Sigmoid()
                 )
         """
@@ -1725,7 +2043,7 @@ class Full_net(nn.Module):
         #print("xcatemb.size = ", xcatemb.size())
         #print(" xcatemb = ", xcatemb)
 
-        xcon = self.conbn_layer(xcon)
+        #xcon = self.conbn_layer(xcon)
 
         #print("xcatemb.size = ", xcatemb.size())
         #print("xcon.size = ", xcon.size())

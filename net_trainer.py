@@ -40,6 +40,7 @@ outcome_to_range = {
 def Log_Convert(outcomes, outc):
     outc_idx = outcome_to_index[outc]
     out1 = int(outcomes[0,0].item())
+    """
     if (outc_idx == 3):
         if out1 == 1:
             out1 = 0
@@ -47,6 +48,7 @@ def Log_Convert(outcomes, outc):
             out1 = 1
         else:
             print("ERROR: ODI4 value other than 1 or 2 shouldn't happen")
+    """
     tmp1 = torch.zeros(1,2)
     tmp1[0,out1] = 1
     ret = tmp1
@@ -131,9 +133,9 @@ def calc_corerr(outputs, outcomes, outcN):
             for j in range(0,len(outputs[i])):
                 outp = outputs[i,j].item()
                 outc = outcomes[i,j].item()
-                if j == 3:
-                    outp = np.round(outp) * 2
-                elif j == 5:
+                #if j == 3:
+                #    outp = np.round(outp) * 2
+                if j == 5:
                     outp = np.round(outp)
             #print("i =", i)
             #print("outcomes[",i,"] = ", outc)
@@ -164,9 +166,10 @@ def validate(net, dataset, criterion, outc):
         outcomes = data['outcomes']
         if outc_idx != 6:
             outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-            if (outc_idx == 3) or (outc_idx == 5):
+            if (outc_idx == 5): # or (outc_idx == 3):
                 outcomes = Log_Convert(outcomes, outc)
 
+        #print("    --- Start ---")
         #print(" Inputs.size = ", inputs.size())
         #print(" Inputs = ", inputs)
         #print(" Outcomes.size = ", outcomes.size())
@@ -180,9 +183,11 @@ def validate(net, dataset, criterion, outc):
             print("Using CPU")
 
         outputs = net(inputs)
+        #print(" Output = ", outputs)
+        #print("    --- End ---")
         loss = criterion(outputs, outcomes)
 
-        if (outc_idx == 3) or (outc_idx == 5):
+        if (outc_idx == 5): # or (outc_idx == 3):
             conv_outp = convert_outputs(outputs, outc)
             cur_cor = calc_cor(conv_outp, outcomes)
         elif (outc_idx == 6):
@@ -194,7 +199,7 @@ def validate(net, dataset, criterion, outc):
         total_loss += loss.item()
         total_data += len(outcomes)
 
-    if (outc_idx == 3) or (outc_idx == 5):
+    if (outc_idx == 5): # or (outc_idx == 3):
         acc = float(total_acc) / total_data
     else:
         acc = 1 - (float(total_acc) / total_data)
@@ -210,13 +215,14 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
     #print("outc = ", outc)
     #print("outc_idx = ", outc_idx)
     #print()
-    if (outc_idx == 3) or (outc_idx == 5):
+    if (outc_idx == 5): # or (outc_idx == 3):
         criterion = nn.CrossEntropyLoss()
         #criterion = nn.BCELoss()
-    elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
-        criterion = nn.L1Loss()
+    #elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
+    #    criterion = nn.L1Loss()
     else:
-        criterion = nn.MSELoss()
+        criterion = nn.L1Loss()
+        #criterion = nn.MSELoss()
 
     optimizer = optim.SGD(net.parameters(), lr=lrn_rate, momentum=mntum)
     #optimizer = optim.Adam(net.parameters(), lr=lrn_rate)
@@ -239,7 +245,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
             #outc_idx = outcome_to_index[outc]
             if outc_idx != 6:
                 outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-                if (outc_idx == 3) or (outc_idx == 5):
+                if (outc_idx == 5): # or (outc_idx == 3):
                     outcomes = Log_Convert(outcomes, outc)
             else:
                 outcomes = outcomes.to(torch.float32)
@@ -266,7 +272,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
             optimizer.step()
             
             #print("  loss.item() = ",loss.item())
-            if (outc_idx == 3) or (outc_idx == 5):
+            if (outc_idx == 5): # or (outc_idx == 3):
                 conv_outp = convert_outputs(outputs, outc)
                 #print("post conv outputs = ", outputs)
                 cur_cor = calc_cor(conv_outp, outcomes)
@@ -283,7 +289,7 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
             #print("      ep_data = ", ep_data)
             #print("    --- End ---")
 
-        if (outc_idx == 3) or (outc_idx == 5):
+        if (outc_idx == 5): # or (outc_idx == 3):
             trn_acc[epoch] = float(ep_trn_acc) / ep_data
         else:
             trn_acc[epoch] = 1 - (float(ep_trn_acc) / ep_data)

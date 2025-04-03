@@ -175,7 +175,7 @@ def calc_error(true, noise, outc, outcomes):
     total_err = 0
     if len(true) == len(noise):
         for i in range(0,len(true)):
-            if outc_idx == 3 or outc_idx == 5:
+            if outc_idx == 5:
                 outid = int(outcomes[i].item())
                 #print("outid = ", outid)
                 outn = noise[i,outid].item()
@@ -206,6 +206,8 @@ def calc_corerror(true, noise, outc, outcomes):
             
                 outn = noise[i,j].item()
                 outt = true[i,j].item()
+                if j == 5:
+                    outn = np.round(outn)
             #print("outt[",i,"] = ", outt)
             #print("outn[",i,"] = ", outn)
             #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
@@ -360,7 +362,7 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                     #print(" noise_outputs = ", noise_outputs)
                     #print(" true_outputs = ", true_outputs)
 
-                    noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
                     #print("totinerr = ", noise_in_errl[i,p])
                     if outc_idx == 6:
                         noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
@@ -394,7 +396,7 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                         ninputs[k,p] = min(ninputs[k,p], predictor_to_range[index_to_predictor[p]])
                         #print("rninputs[k,p]n = ", ninputs[k,p])
 
-                    noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
                     #print("totinerr = ", noise_in_errl[i,p])
 
                     noise_outputs = net(ninputs)
@@ -429,25 +431,32 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
-    #print(" avg_net_true_err = ", avg_net_true_err)
-    #print("avg_noise_in_err = ", avg_noise_in_err)
-    #print(" avg_noise_out_err = ", avg_noise_out_err)
+    print(" avg_net_true_err = ", avg_net_true_err)
+    print()
+    print("avg_noise_in_err = ", avg_noise_in_err)
+    print()
+    print(" avg_noise_out_err = ", avg_noise_out_err)
+    print()
 
     scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
-    #print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
+    print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
+    print()
 
     sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
-    #print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
+    print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
+    print()
 
-    in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
+    #in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
     #print(" in_sub_scaled_avg_noise_out_err = ", in_sub_scaled_avg_noise_out_err)
+    #print()
 
-    vimp = in_sub_scaled_avg_noise_out_err * 10
-    #print(" vimp = ", vimp)
+    vimp = sub_scaled_avg_noise_out_err * 10
+    print(" vimp = ", vimp)
+    print()
 
     print()
     for g in range(lp):
-        if (vimp[g] >= 0) and (vimp[g] < 1):
+        if (vimp[g] >= 0.1) and (vimp[g] < 1):
             print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
     
     #print()

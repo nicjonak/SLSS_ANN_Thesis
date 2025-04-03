@@ -431,10 +431,10 @@ save_num = 0
 
 #hp_search(recovery_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(recovery_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+ts = train(odi4_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 plt.show()
 
-#evaluate_net(recovery_net(), ts, outc, save_num, False)
+evaluate_net(odi4_net(), ts, outc, save_num, False)
 """
 
 #Back Pain Testing
@@ -498,12 +498,12 @@ epochs_min = 50
 epochs_max = 100
 epochs_itr = 1
 
-batch = 10
+batch = 30
 val_per = 0.2
-lr = 0.001 #0.001
-mntum = 0.7 #0.75
+lr = 0.01 #0.001
+mntum = 0.4 #0.75
 nf = 10
-ne = 125
+ne = 75
 outc = "Full"
 save_num = 0
 
