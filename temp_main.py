@@ -436,7 +436,7 @@ mntum = 0.2
 nf = 10
 ne = 100
 outc = "ODI4_Final"
-save_num = 0
+save_num = 101
 
 #hp_search(recovery_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
@@ -467,7 +467,7 @@ epochs_itr = 1
 batch = 30
 val_per = 0.2
 lr = 0.0009 #0.0001
-mntum = 0.33 #0.5
+mntum = 0.25 #0.5
 nf = 10
 ne = 100
 outc = "BackPain"
@@ -501,8 +501,8 @@ epochs_itr = 1
 
 batch = 30
 val_per = 0.2
-lr = 0.001 #0.0001
-mntum = 0.33 #0.5
+lr = 0.0009 #0.0001
+mntum = 0.25 #0.5
 nf = 10
 ne = 100
 outc = "LegPain"
@@ -563,7 +563,7 @@ evaluate_net(recovery_net(), ts, outc, save_num, False)
 
 
 #Full Net testing
-
+"""
 val_per_min = 0.2
 val_per_max = 0.2
 val_per_itr = 1
@@ -595,4 +595,4 @@ ts = train(Full_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
 plt.show()
 
 evaluate_net(Full_net(), ts, outc, save_num, False)
-
+"""
