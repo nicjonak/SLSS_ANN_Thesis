@@ -176,10 +176,10 @@ def calc_error(true, noise, outc, outcomes):
     if len(true) == len(noise):
         for i in range(0,len(true)):
             if outc_idx == 5:
-                outid = int(outcomes[i].item())
+                #outid = int(outcomes[i].item())
                 #print("outid = ", outid)
-                outn = noise[i,outid].item()
-                outt = true[i,outid].item()
+                outn = noise[i].item()
+                outt = true[i].item()
             else:
                 outn = noise[i].item()
                 outt = true[i].item()
@@ -206,8 +206,8 @@ def calc_corerror(true, noise, outc, outcomes):
             
                 outn = noise[i,j].item()
                 outt = true[i,j].item()
-                if j == 5:
-                    outn = np.round(outn)
+                #if j == 5:
+                #    outn = np.round(outn)
             #print("outt[",i,"] = ", outt)
             #print("outn[",i,"] = ", outn)
             #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
@@ -312,7 +312,7 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
                     ninputs[j,p] = ninputs[j,p] + noiset
                     #print("ninputs[j,p] = ", ninputs[j,p])
 
-                noise_in_errl[i,p] = calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs)
+                noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
                 #print("totinerr = ", noise_in_errl[i,p])
 
                 noise_outputs = net(ninputs)
@@ -431,38 +431,61 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
-    print(" avg_net_true_err = ", avg_net_true_err)
-    print()
-    print("avg_noise_in_err = ", avg_noise_in_err)
-    print()
-    print(" avg_noise_out_err = ", avg_noise_out_err)
-    print()
+    #print(" avg_net_true_err = ", avg_net_true_err)
+    #print()
+    #print("avg_noise_in_err = ", avg_noise_in_err)
+    #print()
+    #print(" avg_noise_out_err = ", avg_noise_out_err)
+    #print()
 
     scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
-    print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
-    print()
+    #print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
+    #print()
 
     sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
-    print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
-    print()
+    #print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
+    #print()
 
-    #in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
+    in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
     #print(" in_sub_scaled_avg_noise_out_err = ", in_sub_scaled_avg_noise_out_err)
     #print()
 
     vimp = sub_scaled_avg_noise_out_err * 10
-    print(" vimp = ", vimp)
-    print()
+    #print(" vimp = ", vimp)
+    #print()
 
-    print()
+    #print()
+    """
     for g in range(lp):
-        if (vimp[g] >= 0.1) and (vimp[g] < 1):
+        if (vimp[g] >= 0) and (vimp[g] < 1):
             print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
     
     #print()
     for f in range(lp):
         if vimp[f] >= 1:
             print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[f], vimp[f]))
+    """
+
+    
+
+
+    vimp2 = in_sub_scaled_avg_noise_out_err * 10
+    print(" vimp = ", vimp2)
+    #print()
+    #print("in sub scaled vimp scores")
+    print()
+    """
+    for z in range(lp):
+        if (vimp2[z] >= 0) and (vimp2[z] < 1):
+            print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[z], vimp2[z]))
+    
+    #print()
+    """
+    for x in range(lp):
+        if vimp2[x] >= 0:
+            print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[x], vimp2[x]))
+
+
 
     print("--- Finished Evaluation ---")
     return vimp

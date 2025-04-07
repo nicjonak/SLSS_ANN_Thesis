@@ -166,8 +166,8 @@ def validate(net, dataset, criterion, outc):
         outcomes = data['outcomes']
         if outc_idx != 6:
             outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-            if (outc_idx == 5): # or (outc_idx == 3):
-                outcomes = Log_Convert(outcomes, outc)
+            #if (outc_idx == 5): # or (outc_idx == 3):
+            #    outcomes = Log_Convert(outcomes, outc)
 
         #print("    --- Start ---")
         #print(" Inputs.size = ", inputs.size())
@@ -216,8 +216,8 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
     #print("outc_idx = ", outc_idx)
     #print()
     if (outc_idx == 5): # or (outc_idx == 3):
-        criterion = nn.CrossEntropyLoss()
-        #criterion = nn.BCELoss()
+        #criterion = nn.CrossEntropyLoss()
+        criterion = nn.BCELoss()
     #elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
     #    criterion = nn.L1Loss()
     else:
@@ -245,8 +245,8 @@ def trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save
             #outc_idx = outcome_to_index[outc]
             if outc_idx != 6:
                 outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-                if (outc_idx == 5): # or (outc_idx == 3):
-                    outcomes = Log_Convert(outcomes, outc)
+                #if (outc_idx == 5): # or (outc_idx == 3):
+                #    outcomes = Log_Convert(outcomes, outc)
             else:
                 outcomes = outcomes.to(torch.float32)
             #print("    --- Start ---")

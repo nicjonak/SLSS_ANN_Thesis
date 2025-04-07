@@ -43,7 +43,7 @@ def hp_search(net, folds, val_per_min, val_per_max, val_per_itr, batch_min, batc
     print("batch_list = ", batch_list)
 
     #lrn_rate_list = np.linspace(lrn_rate_min, lrn_rate_max, lrn_rate_itr)
-    lrn_rate_list = np.array([0.00001, 0.0001, 0.001, 0.01, 0.1, 1])
+    lrn_rate_list = np.array([0.005, 0.01, 0.05])
     print("lrn_rate_list = ", lrn_rate_list)
 
     mntum_list = np.linspace(mntum_min, mntum_max, mntum_itr)
@@ -262,7 +262,12 @@ def train(net, batch, val_per, lrn_rate, mntum, folds, epochs, cross_val, outc, 
             val_load = DataLoader(val_data, batch_size=batch, shuffle=True, drop_last=True)
             trn_load = DataLoader(trn_data, batch_size=batch, shuffle=True, drop_last=True)
 
-            trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num, False)
+            if fold == 0:
+                trc = True
+            else:
+                trc = False
+
+            trainNet(trn_load, val_load, net, batch, lrn_rate, mntum, epochs, outc, save_num, trc)
 
             end_time = time.time()
             print("--- Finished Training ---")
@@ -273,6 +278,9 @@ def train(net, batch, val_per, lrn_rate, mntum, folds, epochs, cross_val, outc, 
             plot_training(folds, fold*2 + 1, outc, save_num)
 
             fold_tst_acc[fold], fold_tst_loss[fold] = test(net, ts_load, outc, save_num, epochs, folds, fold*2 + 1, True, True)
+
+            if outc_idx == 6:
+                evaluate_net(Full_net(), ts_load, outc, save_num, False)
 
         print(("    Cross Validation Avg Acc: {:.5f}, Cross Validation Avg Loss: {:.5f}").format(np.mean(fold_tst_acc), np.mean(fold_tst_loss)))
 
@@ -293,13 +301,14 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
 
     outc_idx = outcome_to_index[outc]
 
-    if (outc_idx == 3) or (outc_idx == 5):
-        criterion = nn.CrossEntropyLoss()
-        #criterion = nn.BCELoss()
-    elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
-        criterion = nn.L1Loss()
+    if (outc_idx == 5): #or (outc_idx == 3):
+        #criterion = nn.CrossEntropyLoss()
+        criterion = nn.BCELoss()
+    #elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
+    #    criterion = nn.L1Loss()
     else:
-        criterion = nn.MSELoss()
+        criterion = nn.L1Loss()
+        #criterion = nn.MSELoss()
     
     if torch.cuda.is_available():
         net.cuda()
@@ -352,19 +361,19 @@ epochs_itr = 10
 
 batch = 10
 val_per = 0.2
-lr = 0.001
-mntum = 0.8
+lr = 0.0006 #0.001
+mntum = 0.19 #0.4
 nf = 10
 ne = 100
 outc = "EQ_IndexTL12"
-save_num = 0
+save_num = 10
 
 #hp_search(eqidxtl12_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(eqidxtl12_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+ts = train(eqidxtl12_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
 plt.show()
 
-#evaluate_net(eqidxtl12_net(), ts, outc, save_num, False)
+evaluate_net(eqidxtl12_net(), ts, outc, save_num, False)
 """
 
 #ODI Score testing
@@ -385,21 +394,21 @@ epochs_min = 50
 epochs_max = 100
 epochs_itr = 1
 
-batch = 10
+batch = 30
 val_per = 0.2
-lr = 0.001
-mntum = 0.4
+lr = 0.0009
+mntum = 0.2
 nf = 10
 ne = 100
 outc = "ODIScore"
-save_num = 0
+save_num = 100
 
 #hp_search(odiscore_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(odiscore_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+ts = train(odiscore_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
 plt.show()
 
-#evaluate_net(odiscore_net(), ts, outc, save_num, False)
+evaluate_net(odiscore_net(), ts, outc, save_num, False)
 """
 
 #ODI4 Final Testing
@@ -422,10 +431,10 @@ epochs_itr = 10
 
 batch = 10
 val_per = 0.2
-lr = 0.001
-mntum = 0.8
+lr = 0.0009
+mntum = 0.2
 nf = 10
-ne = 50
+ne = 100
 outc = "ODI4_Final"
 save_num = 0
 
@@ -455,33 +464,25 @@ epochs_min = 50
 epochs_max = 100
 epochs_itr = 1
 
-batch = 10
+batch = 30
 val_per = 0.2
-lr = 0.0001
-mntum = 0.5
+lr = 0.0009 #0.0001
+mntum = 0.33 #0.5
 nf = 10
 ne = 100
 outc = "BackPain"
-save_num = 1
+save_num = 10
 
 #hp_search(backpain_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(backpain_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+ts = train(backpain_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
 plt.show()
+
+evaluate_net(backpain_net(), ts, outc, save_num, False)
 """
 
-
-
+#Leg Pain Testing
 """
-ts = train(recovery_net(), 10, 0.1, 0.01, 0.9, 10, 10, "Recovery", 0)
-test(recovery_net(), ts, "Recovery", 0, 10, 1)
-plt.show()
-"""
-
-
-
-#Full Net testing
-
 val_per_min = 0.2
 val_per_max = 0.2
 val_per_itr = 1
@@ -490,7 +491,7 @@ batch_max = 32
 batch_itr = 1
 lrn_rate_min = 0.0001 
 lrn_rate_max = 0.1
-lrn_rate_itr = 5
+lrn_rate_itr = 6
 mntum_min = 0.4
 mntum_max = 0.9
 mntum_itr = 6
@@ -500,12 +501,93 @@ epochs_itr = 1
 
 batch = 30
 val_per = 0.2
+lr = 0.001 #0.0001
+mntum = 0.33 #0.5
+nf = 10
+ne = 100
+outc = "LegPain"
+save_num = 10
+
+#hp_search(legpain_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
+
+ts = train(legpain_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
+plt.show()
+
+evaluate_net(legpain_net(), ts, outc, save_num, False)
+"""
+
+
+
+
+
+"""
+ts = train(recovery_net(), 10, 0.1, 0.01, 0.9, 10, 10, "Recovery", 0)
+test(recovery_net(), ts, "Recovery", 0, 10, 1)
+plt.show()
+"""
+
+#Recovery Testing
+"""
+val_per_min = 0.2
+val_per_max = 0.2
+val_per_itr = 1
+batch_min = 10
+batch_max = 32
+batch_itr = 1
+lrn_rate_min = 0.0001 
+lrn_rate_max = 0.1
+lrn_rate_itr = 6
+mntum_min = 0.4
+mntum_max = 0.9
+mntum_itr = 6
+epochs_min = 50
+epochs_max = 100
+epochs_itr = 1
+
+batch = 30
+val_per = 0.2
+lr = 0.0009 #0.0009
+mntum = 0.2 #0.2
+nf = 10
+ne = 100
+outc = "Recovery"
+save_num = 1
+
+#hp_search(recovery_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
+
+ts = train(recovery_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
+plt.show()
+
+evaluate_net(recovery_net(), ts, outc, save_num, False)
+"""
+
+
+#Full Net testing
+
+val_per_min = 0.2
+val_per_max = 0.2
+val_per_itr = 1
+batch_min = 30
+batch_max = 32
+batch_itr = 1
+lrn_rate_min = 0.01 
+lrn_rate_max = 0.1
+lrn_rate_itr = 3
+mntum_min = 0.3
+mntum_max = 0.5
+mntum_itr = 3
+epochs_min = 50
+epochs_max = 100
+epochs_itr = 6
+
+batch = 30
+val_per = 0.2
 lr = 0.01 #0.001
 mntum = 0.4 #0.75
 nf = 10
-ne = 75
+ne = 100
 outc = "Full"
-save_num = 0
+save_num = 30
 
 #hp_search(Full_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
