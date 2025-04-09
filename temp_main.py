@@ -279,7 +279,7 @@ def train(net, batch, val_per, lrn_rate, mntum, folds, epochs, cross_val, outc, 
 
             fold_tst_acc[fold], fold_tst_loss[fold] = test(net, ts_load, outc, save_num, epochs, folds, fold*2 + 1, True, True)
 
-            if outc_idx == 6:
+            if outc_idx == 6 and fold == 0:
                 evaluate_net(Full_net(), ts_load, outc, save_num, False)
 
         print(("    Cross Validation Avg Acc: {:.5f}, Cross Validation Avg Loss: {:.5f}").format(np.mean(fold_tst_acc), np.mean(fold_tst_loss)))
@@ -563,7 +563,7 @@ evaluate_net(recovery_net(), ts, outc, save_num, False)
 
 
 #Full Net testing
-"""
+
 val_per_min = 0.2
 val_per_max = 0.2
 val_per_itr = 1
@@ -582,17 +582,17 @@ epochs_itr = 6
 
 batch = 30
 val_per = 0.2
-lr = 0.01 #0.001
-mntum = 0.4 #0.75
+lr = 0.008 #0.001
+mntum = 0.5 #0.75
 nf = 10
 ne = 100
 outc = "Full"
-save_num = 30
+save_num = 70
 
 #hp_search(Full_net(), nf, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, False)
 
-ts = train(Full_net(), batch, val_per, lr, mntum, nf, ne, False, outc, save_num)
+ts = train(Full_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_num)
 plt.show()
 
 evaluate_net(Full_net(), ts, outc, save_num, False)
-"""
+

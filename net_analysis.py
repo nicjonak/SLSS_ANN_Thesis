@@ -431,8 +431,8 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
-    #print(" avg_net_true_err = ", avg_net_true_err)
-    #print()
+    print(" avg_net_true_err = ", avg_net_true_err)
+    print()
     #print("avg_noise_in_err = ", avg_noise_in_err)
     #print()
     #print(" avg_noise_out_err = ", avg_noise_out_err)
@@ -450,30 +450,30 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     #print(" in_sub_scaled_avg_noise_out_err = ", in_sub_scaled_avg_noise_out_err)
     #print()
 
-    vimp = sub_scaled_avg_noise_out_err * 10
-    #print(" vimp = ", vimp)
+    vimp = in_sub_scaled_avg_noise_out_err #* 10
+    print(" vimp = ", vimp)
     #print()
 
     #print()
-    """
-    for g in range(lp):
-        if (vimp[g] >= 0) and (vimp[g] < 1):
-            print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
+    
+    #for g in range(lp):
+    #    if (vimp[g] >= 0) and (vimp[g] < 1):
+    #        print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
     
     #print()
     for f in range(lp):
-        if vimp[f] >= 1:
+        if vimp[f] >= 0:
             print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[f], vimp[f]))
-    """
+    
 
     
 
-
+    print()
     vimp2 = in_sub_scaled_avg_noise_out_err * 10
-    print(" vimp = ", vimp2)
+    #print(" vimp2 = ", vimp2)
     #print()
     #print("in sub scaled vimp scores")
-    print()
+    #print()
     """
     for z in range(lp):
         if (vimp2[z] >= 0) and (vimp2[z] < 1):
@@ -481,9 +481,11 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     
     #print()
     """
+    """
     for x in range(lp):
         if vimp2[x] >= 0:
             print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[x], vimp2[x]))
+    """
 
 
 
