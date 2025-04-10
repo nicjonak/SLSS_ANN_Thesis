@@ -11,7 +11,6 @@ from net_trainer import *
 from data_visualizer import *
 from net_analysis import *
 
-
 #Function to search range of hyperparameters and report best combination
 def hp_search(net, folds, val_per_min, val_per_max, val_per_itr, batch_min, batch_max, batch_itr, lrn_rate_min, lrn_rate_max, lrn_rate_itr, mntum_min, mntum_max, mntum_itr, epochs_min, epochs_max, epochs_itr, outc, save_num, Trace):
     
@@ -42,8 +41,7 @@ def hp_search(net, folds, val_per_min, val_per_max, val_per_itr, batch_min, batc
     batch_list = np.floor(np.linspace(batch_min, batch_max, batch_itr))
     print("batch_list = ", batch_list)
 
-    #lrn_rate_list = np.linspace(lrn_rate_min, lrn_rate_max, lrn_rate_itr)
-    lrn_rate_list = np.array([0.005, 0.01, 0.05])
+    lrn_rate_list = np.linspace(lrn_rate_min, lrn_rate_max, lrn_rate_itr)
     print("lrn_rate_list = ", lrn_rate_list)
 
     mntum_list = np.linspace(mntum_min, mntum_max, mntum_itr)
@@ -173,6 +171,7 @@ def hp_search(net, folds, val_per_min, val_per_max, val_per_itr, batch_min, batc
 
     return curb_ts_acc, curb_ts_loss, curb_epochs, curb_batch, curb_lrn_rate, curb_mntum, curb_val_per #return best results after printing
 
+
 #Trains net and plots output, can do single run or perform cross validation and plot outputs
 def train(net, batch, val_per, lrn_rate, mntum, folds, epochs, cross_val, outc, save_num):
     
@@ -292,6 +291,7 @@ def train(net, batch, val_per, lrn_rate, mntum, folds, epochs, cross_val, outc, 
 
         return ts_load
 
+
 #Tests net (Specified by outc and save_num) on given dataset [ne, nf used for graphing test lines on the train/val graphs]
 def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
     if Trace:
@@ -301,14 +301,10 @@ def test(net, dataset, outc, save_num, ne, num_sbplt, cur_sbplt, plot, Trace):
 
     outc_idx = outcome_to_index[outc]
 
-    if (outc_idx == 5): #or (outc_idx == 3):
-        #criterion = nn.CrossEntropyLoss()
+    if (outc_idx == 5):
         criterion = nn.BCELoss()
-    #elif (outc_idx == 2) or (outc_idx == 1) or (outc_idx == 0) or (outc_idx == 6):
-    #    criterion = nn.L1Loss()
     else:
         criterion = nn.L1Loss()
-        #criterion = nn.MSELoss()
     
     if torch.cuda.is_available():
         net.cuda()
@@ -514,16 +510,6 @@ ts = train(legpain_net(), batch, val_per, lr, mntum, nf, ne, True, outc, save_nu
 plt.show()
 
 evaluate_net(legpain_net(), ts, outc, save_num, False)
-"""
-
-
-
-
-
-"""
-ts = train(recovery_net(), 10, 0.1, 0.01, 0.9, 10, 10, "Recovery", 0)
-test(recovery_net(), ts, "Recovery", 0, 10, 1)
-plt.show()
 """
 
 #Recovery Testing

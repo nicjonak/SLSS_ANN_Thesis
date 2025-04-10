@@ -4,9 +4,8 @@
 import torch
 from net_trainer import *
 from data_loader import *
-#from test_nets import * #temp for debugging
-#import random #temp for debugging
 
+#Dict to convert indices to their predictor strings
 index_to_predictor = {
         0: "Age",
         1: "BMI",
@@ -46,6 +45,7 @@ index_to_predictor = {
         35: "physio",
         }
 
+#Dict to convert predictor strings to their data ranges
 predictor_to_range = {
         "Age": 100,
         "BMI": 60,
@@ -85,7 +85,7 @@ predictor_to_range = {
         "physio": 1,
         }
 
-
+#Calculate/get and store standard deviations of each predictor for noise production
 tvs_data = load_data()
 tvs_load = DataLoader(tvs_data, batch_size=len(tvs_data))
 for i, data in enumerate(tvs_load):
@@ -130,98 +130,58 @@ for i, data in enumerate(tvs_load):
         35: inputs[:,35].std().item(),
         }
 
-def bi_Convert(outcomes):
-    ret = outcomes.clone().detach()
-    for i in range(len(outcomes)):
-        if outcomes[i] == 1:
-            ret[i] = 0
-        if outcomes[i] == 2:
-            ret[i] = 1
-    return ret
-
+#Calculate error/difference between true and noisy inputs
 def calc_in_error(true, noise, p):
     total_err = 0
-    #print("true in = ", true)
-    #print("noise in = ", noise)
     if len(true) == len(noise):
         for i in range(0,len(true)):
             outn = noise[i].item()
             outt = true[i].item()
-            #print("int[",i,"] = ", outt)
-            #print("inn[",i,"] = ", outn)
-            #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
 
-            """
-            if p == 0 or p == 1:
-                #print("err[",i,"] = ", abs(outt - outn) / outt)
-                total_err+= abs(outt - outn) / outt
-            else:
-                #print("err[",i,"] = ", abs(outt - outn) / predictor_to_range[index_to_predictor[p]])
-                total_err+= abs(outt - outn) / predictor_to_range[index_to_predictor[p]]
-            """
             total_err+= abs(outt - outn) / predictor_to_range[index_to_predictor[p]]
-
-            
-            #print("-")
-            
     else:
         print("ERROR: calc_err(): outputs and outcomes different size")
         return 0.0
-    #print("total_err = ", total_err)
+
     return total_err
 
-def calc_error(true, noise, outc, outcomes):
+#Calculate error/difference between true and noisy outputs
+def calc_error(true, noise, outc):
     outc_idx = outcome_to_index[outc]
     total_err = 0
     if len(true) == len(noise):
         for i in range(0,len(true)):
             if outc_idx == 5:
-                #outid = int(outcomes[i].item())
-                #print("outid = ", outid)
                 outn = noise[i].item()
                 outt = true[i].item()
             else:
                 outn = noise[i].item()
                 outt = true[i].item()
-            #print("outt[",i,"] = ", outt)
-            #print("outn[",i,"] = ", outn)
-            #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
-            #print("-")
 
             total_err+= abs(outt - outn) / outcome_to_range[outc]
-            
     else:
         print("ERROR: calc_err(): outputs and outcomes different size")
         return 0.0
-    #print("total_err = ", total_err)
+
     return total_err
 
-def calc_corerror(true, noise, outc, outcomes):
-    outc_idx = outcome_to_index[outc]
+#Calculate error/difference between true and noisy outputs for all outcomes
+def calc_corerror(true, noise):
     total_err = 0
     if len(true) == len(noise):
         for i in range(0,len(true)):
             temp_err = 0.0
             for j in range(0,len(true[i])):
-            
                 outn = noise[i,j].item()
                 outt = true[i,j].item()
-                #if j == 5:
-                #    outn = np.round(outn)
-            #print("outt[",i,"] = ", outt)
-            #print("outn[",i,"] = ", outn)
-            #print("err[",i,"] = ", abs(outt - outn)/outcome_to_range[outc])
-            #print("-")
 
                 temp_err+= abs(outt - outn) / outcome_to_range[index_to_outcome[j]]
             total_err+= temp_err/6
-            
     else:
         print("ERROR: calc_err(): outputs and outcomes different size")
         return 0.0
-    #print("total_err = ", total_err)
-    return total_err
 
+    return total_err
 
 
 def evaluate_net(net, dataset, outc, save_num, one_point):
@@ -230,8 +190,6 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     print("path = ", path)
 
     outc_idx = outcome_to_index[outc]
-    #print("outc = ", outc)
-    #print("outc_idx = ", outc_idx)
     
     if torch.cuda.is_available():
         net.cuda()
@@ -242,8 +200,6 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     net.load_state_dict(torch.load(path))
 
     for dt in dataset:
-        #print("len data = ", len(dataset))
-        #print("len pred = ", len(dt['predictors'].clone().detach()[1]))
         lp = len(dt['predictors'].clone().detach()[1])
         break
     
@@ -251,24 +207,15 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
     noise_out_errl = np.zeros((len(dataset),lp))
     net_true_errl = np.zeros(len(dataset))
 
-    #Either add break or counter to limit from single data point to entire test set used and averaged to find the critical predictors
     for i, data in enumerate(dataset):
         inputs = data['predictors']
         outcomes = data['outcomes']
         if outc_idx != 6:
             outcomes = outcomes[:,outc_idx].unsqueeze(1).to(torch.float32)
-            if (outc_idx == 3):
-                outcomes = bi_Convert(outcomes)
         else:
             outcomes = outcomes.to(torch.float32)
 
-        #print(" outcomes = ", outcomes)
-
         num_pred = len(inputs[0])
-        #print(" Inputs.size = ", inputs.size())
-        #print(" Inputs.size[0] = ", num_pred)
-        #print(" Inputs.size[1] = ", len(inputs))
-        #print(" Inputs = ", inputs)
 
         if torch.cuda.is_available() == True:
             inputs = inputs.cuda()
@@ -278,146 +225,80 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             print("Using CPU")
 
         true_outputs = net(inputs)
-        #print(" true_outputs = ", true_outputs)
+
         for q in range(100):
             temp_outputs = net(inputs)
             if outc_idx == 6:
-                net_true_errl[i] += calc_corerror(true_outputs, temp_outputs, outc, outcomes) / len(inputs)
+                net_true_errl[i] += calc_corerror(true_outputs, temp_outputs) / len(inputs) #Calculate net avg true output noise (output noise w/ no input noise)
             else:
-                net_true_errl[i] += calc_error(true_outputs, temp_outputs, outc, outcomes) / len(inputs)
+                net_true_errl[i] += calc_error(true_outputs, temp_outputs, outc) / len(inputs) #Calculate net avg true output noise (output noise w/ no input noise)
         net_true_errl[i] = net_true_errl[i] / 100
-
-        #print("net_true_errl[i] = ", net_true_errl[i])
-
 
         for p in range(num_pred): # Loop through all predictors
             ninputs = inputs.clone().detach()
             if p < 7: # Continuous predictors
-                #print(p)
-                #print(index_to_predictor[p])
-                #print(("{} : {}").format(index_to_predictor[p], inputs[:,p]))
-                #print("std = ", ninputs[:,p].std().item())
-                #print("idx std = ", index_to_std[p])
                 std = ninputs[:,p].std().item()
-
                 for j in range(len(ninputs)): #Add noise to each data point in batch
                     noise = torch.randn(1)
                     noiset = noise * index_to_std[p]
                     if torch.cuda.is_available():
                         noiset = noiset.cuda()
-                    #print("noise = ", noise)
-                    #print("noise * std = ", noiseb)
-                    #print("noise * tot_std = ", noiset)
-                    #print("ninputs[j,p] = ", ninputs[j,p])
-                    ninputs[j,p] = ninputs[j,p] + noiset
-                    #print("ninputs[j,p] = ", ninputs[j,p])
 
-                noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
-                #print("totinerr = ", noise_in_errl[i,p])
+                    ninputs[j,p] = ninputs[j,p] + noiset
+
+                noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2 #Calculate avg input noise
 
                 noise_outputs = net(ninputs)
-                #print(" noise_outputs = ", noise_outputs)
-                #print(" true_outputs = ", true_outputs)
-                if outc_idx == 6:
-                    noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
-                else:
-                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
-                #print("toterr = ", noise_out_errl[i,p])
 
+                if outc_idx == 6:
+                    noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs) / len(ninputs) #Calculate avg output noise due to inout noise
+                else:
+                    noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs) #Calculate avg output noise due to inout noise
 
             else: # Categorical Predictors
                 if (p >= 7 and p <= 11) or (p >= 27 and p <= 35): # Binary/2Category Predictors
-                    #print(p)
-                    #print(index_to_predictor[p])
-                    #print(("{} : {}").format(index_to_predictor[p], inputs[:,p]))
-                    #print("std = ", ninputs[:,p].std().item())
-                    #print("idx std = ", index_to_std[p])
                     std = ninputs[:,p].std().item()
-
-                    #print("in = ", ninputs[:,p])
-                    for l in range(len(ninputs)):
+                    for l in range(len(ninputs)): #Add noise to each data point in batch
                         noise = torch.randn(1)
-                        #noiset = noise * index_to_std[p]
                         if torch.cuda.is_available():
-                            #noiset = noiset.cuda()
                             noise = noise.cuda()
-                        #print("noise = ", noise)
-                        #print("noise * std = ", noiseb)
-                        #print("noise * tot_std = ", noiset)
-                        #print("ninputs[k,p] = ", ninputs[k,p])
+
                         ninputs[l,p] = ninputs[l,p] + noise
-                        #print("ninputs[k,p]n = ", ninputs[k,p])
                         ninputs[l,p] = torch.round(ninputs[l,p])
                         ninputs[l,p] = max(ninputs[l,p], 0)
                         ninputs[l,p] = min(ninputs[l,p], predictor_to_range[index_to_predictor[p]])
-                        """
-                        if ninputs[l,p] == 0:
-                            ninputs[l,p] = 1
-                        else:
-                            ninputs[l,p] = 0
-                        """
-                    #print("in = ", ninputs[:,p])
 
                     noise_outputs = net(ninputs)
-                    #print(" noise_outputs = ", noise_outputs)
-                    #print(" true_outputs = ", true_outputs)
 
-                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
-                    #print("totinerr = ", noise_in_errl[i,p])
+                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2 #Calculate avg input noise
                     if outc_idx == 6:
-                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs) / len(ninputs) #Calculate avg output noise due to inout noise
                     else:
-                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
-                    #print("toterr = ", noise_out_errl[i,p])
-
-                    #exit()
+                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs) #Calculate avg output noise due to inout noise
                 else:
-                    #print(p)
-                    #print(index_to_predictor[p])
-                    #print(("{} : {}").format(index_to_predictor[p], ninputs[:,p]))
-                    #print("std = ", ninputs[:,p].std().item())
-                    #print("idx std = ", index_to_std[p])
                     std = ninputs[:,p].std().item()
-
                     for k in range(len(ninputs)): #Add noise to each data point in batch
                         noise = torch.randn(1)
-                        #noiset = noise * index_to_std[p]
                         if torch.cuda.is_available():
-                            #noiset = noiset.cuda()
                             noise = noise.cuda()
-                        #print("noise = ", noise)
-                        #print("noise * std = ", noiseb)
-                        #print("noise * tot_std = ", noiset)
-                        #print("ninputs[k,p] = ", ninputs[k,p])
+
                         ninputs[k,p] = ninputs[k,p] + noise
-                        #print("ninputs[k,p]n = ", ninputs[k,p])
                         ninputs[k,p] = torch.round(ninputs[k,p])
                         ninputs[k,p] = max(ninputs[k,p], 0)
                         ninputs[k,p] = min(ninputs[k,p], predictor_to_range[index_to_predictor[p]])
-                        #print("rninputs[k,p]n = ", ninputs[k,p])
 
-                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2
-                    #print("totinerr = ", noise_in_errl[i,p])
+                    noise_in_errl[i,p] = (calc_in_error(inputs[:,p], ninputs[:,p], p) / len(ninputs))**2 #Calculate avg input noise
 
                     noise_outputs = net(ninputs)
-                    #print(" noise_outputs = ", noise_outputs)
-                    #print(" true_outputs = ", true_outputs)
+
                     if outc_idx == 6:
-                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
+                        noise_out_errl[i,p] = calc_corerror(true_outputs, noise_outputs) / len(ninputs) #Calculate avg output noise due to inout noise
                     else:
-                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc, outcomes) / len(ninputs)
-                    #print("toterr = ", noise_out_errl[i,p])
-
-
-                    #exit()
+                        noise_out_errl[i,p] = calc_error(true_outputs, noise_outputs, outc) / len(ninputs) #Calculate avg output noise due to inout noise
 
         if one_point: #Break after first batch if one_point True
             if i==0:
                 break
-    
-    #print("net_true_errl = ", net_true_errl)
-    #print("noise_in_errl = ", noise_in_errl)
-    #print("noise_out_errl = ", noise_out_errl)
 
     if one_point:
         avg_net_true_err = net_true_errl[0]
@@ -431,95 +312,40 @@ def evaluate_net(net, dataset, outc, save_num, one_point):
             avg_noise_in_err[r] = np.mean(noise_in_errl[:,r])
             avg_noise_out_err[r] = np.mean(noise_out_errl[:,r])
 
-    print(" avg_net_true_err = ", avg_net_true_err)
-    print()
+    #Prints commented out but left in for debugging/necessity
+
+    #print(" avg_net_true_err = ", avg_net_true_err)
+    #print()
     #print("avg_noise_in_err = ", avg_noise_in_err)
     #print()
     #print(" avg_noise_out_err = ", avg_noise_out_err)
     #print()
 
-    scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err
+    scaled_avg_noise_out_err = avg_noise_out_err / avg_net_true_err #Calculate/scale amount of noise in output due to input noise as percent of true net output noise
     #print(" scaled_avg_noise_out_err = ", scaled_avg_noise_out_err)
     #print()
 
-    sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1)
+    sub_scaled_avg_noise_out_err = np.abs(scaled_avg_noise_out_err - 1) #Subtract 1 from scaled output noise to get the relative/percent amount of output noise increase w/ input noise
     #print(" sub_scaled_avg_noise_out_err = ", sub_scaled_avg_noise_out_err)
     #print()
 
-    in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err)
+    in_sub_scaled_avg_noise_out_err = np.subtract(sub_scaled_avg_noise_out_err,avg_noise_in_err) #Subtract avg input noise to get a score that measures the percent/amount of output noise relative to/beyond input noise
     #print(" in_sub_scaled_avg_noise_out_err = ", in_sub_scaled_avg_noise_out_err)
     #print()
 
-    vimp = in_sub_scaled_avg_noise_out_err #* 10
-    print(" vimp = ", vimp)
-    #print()
+    vimp = in_sub_scaled_avg_noise_out_err
+    #print(" vimp = ", vimp)
 
-    #print()
+    print()    
+    for g in range(lp):
+        if (vimp[g] >= 0) and (vimp[g] < 0.1):
+            print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
     
-    #for g in range(lp):
-    #    if (vimp[g] >= 0) and (vimp[g] < 1):
-    #        print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[g], vimp[g]))
-    
-    #print()
+    print()
     for f in range(lp):
-        if vimp[f] >= 0:
+        if vimp[f] >= 0.1:
             print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[f], vimp[f]))
-    
-
-    
 
     print()
-    vimp2 = in_sub_scaled_avg_noise_out_err * 10
-    #print(" vimp2 = ", vimp2)
-    #print()
-    #print("in sub scaled vimp scores")
-    #print()
-    """
-    for z in range(lp):
-        if (vimp2[z] >= 0) and (vimp2[z] < 1):
-            print((" Minor Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[z], vimp2[z]))
-    
-    #print()
-    """
-    """
-    for x in range(lp):
-        if vimp2[x] >= 0:
-            print((" Critical Predictor: {} | "+"VI Score: {:.5f}").format(index_to_predictor[x], vimp2[x]))
-    """
-
-
-
     print("--- Finished Evaluation ---")
     return vimp
-
-        
-#temp for debugging
-"""
-folds = 10
-tvs_data = load_data()
-splits = [1/folds] * folds
-tvs_folds = torch.utils.data.random_split(tvs_data, splits)
-fold = random.randrange(folds)
-print("Test Fold: ", fold)
-
-ts_data = tvs_folds[fold]
-ts_load = DataLoader(ts_data, batch_size=10, shuffle=True, drop_last=True)
-"""
-"""
-outc = "EQ_IndexTL12"
-save_num = 0
-evaluate_net(eqidxtl12_net(), ts_load, outc, save_num, False)
-
-outc = "ODI4_Final"
-save_num = 0
-evaluate_net(recovery_net(), ts_load, outc, save_num, False)
-
-outc = "ODIScore"
-save_num = 0
-evaluate_net(odiscore_net(), ts_load, outc, save_num, False)
-"""
-"""
-outc = "Full"
-save_num = 0
-evaluate_net(Full_net(), ts_load, outc, save_num, False)
-"""
